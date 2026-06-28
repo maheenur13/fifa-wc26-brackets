@@ -1470,6 +1470,49 @@
   font-weight: 700;
 }
 
+/* Share View Styles */
+.shareViewHeader {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.shareViewTitle {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 900;
+  font-size: clamp(28px, 6vw, 42px);
+  background: var(--grad-hot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 8px;
+}
+
+.shareViewSub {
+  color: var(--ink-dim);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.shareViewActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .shareViewActions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .shareViewActions .btn,
+  .shareViewActions .btnGhost {
+    width: 100%;
+  }
+}
+
 /* Edit Profile Page Styles */
 .editField {
   display: flex;

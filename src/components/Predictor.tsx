@@ -7,6 +7,7 @@ import { prunePicks, champion, type Picks } from "@/lib/bracket";
 import { syncPrediction } from "@/lib/sync-prediction";
 import {
   STORAGE_KEY,
+  getOrCreateClientId,
   type Phase,
 } from "@/lib/storage";
 import type { PredictionRow } from "@/lib/predictions";
@@ -36,6 +37,7 @@ export default function Predictor() {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [screenshotMode, setScreenshotMode] = useState<"card" | "bracket">("bracket");
+  const [showBracketCapture, setShowBracketCapture] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const bracketShareRef = useRef<HTMLDivElement>(null);
 
@@ -278,6 +280,15 @@ export default function Predictor() {
     console.log('✅ Logged out successfully');
   }
 
+  function handleShare() {
+    // Get the client ID (unique identifier for this prediction)
+    const clientId = getOrCreateClientId();
+    
+    // Navigate to share URL
+    const shareUrl = `/share/${clientId}`;
+    router.push(shareUrl);
+  }
+
   async function handleRefreshFromCloud() {
     if (!email || refreshing) return;
     
@@ -358,14 +369,20 @@ export default function Predictor() {
 
   async function download() {
     setShareError(false);
-    setDownloading(true);
     
-    // For bracket mode, use the BracketShareView component
+    // For bracket mode, show it temporarily while capturing
     if (screenshotMode === "bracket") {
+      setShowBracketCapture(true);
+      setDownloading(true);
+      
+      // Wait for bracket to render
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       if (!bracketShareRef.current) {
         console.error("Bracket share view not available");
         alert("Please wait for bracket to load");
         setDownloading(false);
+        setShowBracketCapture(false);
         return;
       }
       
@@ -375,20 +392,10 @@ export default function Predictor() {
         }
         
         const node = bracketShareRef.current;
-        
-        // Force layout calculation
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // Get the full dimensions including all content
         const actualWidth = Math.max(node.scrollWidth, node.offsetWidth);
         const actualHeight = Math.max(node.scrollHeight, node.offsetHeight);
         
-        console.log('Capturing branded bracket:', { 
-          scrollWidth: node.scrollWidth,
-          offsetWidth: node.offsetWidth,
-          actualWidth, 
-          actualHeight 
-        });
+        console.log('Capturing branded bracket:', { actualWidth, actualHeight });
         
         const render = toPng(node, {
           pixelRatio: 3,
@@ -417,12 +424,15 @@ export default function Predictor() {
         setShareError(true);
       } finally {
         setDownloading(false);
+        setShowBracketCapture(false);
       }
       
       return;
     }
     
     // For card mode, use shareRef
+    setDownloading(true);
+    
     if (!shareRef.current) {
       console.error("Share card ref not available");
       setDownloading(false);
@@ -588,24 +598,27 @@ export default function Predictor() {
           <SyncButton name={name} email={email} picks={picks} phase={phase} />
           
           {/* Hidden bracket share view for screenshots */}
-          <div style={{ 
-            position: 'fixed', 
-            left: '-99999px', 
-            top: 0, 
-            width: 'auto',
-            minWidth: '2000px',
-            visibility: 'hidden',
-            pointerEvents: 'none'
-          }}>
-            <BracketShareView
-              ref={bracketShareRef}
-              name={name}
-              picks={picks}
-              champ={champ}
-              onPick={handlePick}
-              onCrown={() => {}}
-            />
-          </div>
+          {showBracketCapture && (
+            <div style={{ 
+              position: 'fixed', 
+              inset: 0,
+              zIndex: 10000,
+              background: '#0a1230',
+              overflow: 'auto',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'center'
+            }}>
+              <BracketShareView
+                ref={bracketShareRef}
+                name={name}
+                picks={picks}
+                champ={champ}
+                onPick={handlePick}
+                onCrown={() => {}}
+              />
+            </div>
+          )}
           
           <div className={styles.resultActions}>
             <button 
@@ -709,10 +722,7 @@ export default function Predictor() {
           {champ ? (
             <button
               className={styles.btn}
-              onClick={() => {
-                setPhase("result");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
+              onClick={handleShare}
             >
               👑 Crown champion & share
             </button>
