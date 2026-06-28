@@ -138,16 +138,7 @@ export default function Predictor() {
     
     setCheckingEmail(true);
     
-    // If both email and name are provided (editing case), go straight to predict
-    if (name.trim()) {
-      console.log('✅ Both email and name provided, going to predict phase');
-      setCheckingEmail(false);
-      setPhase("predict");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-    
-    // Check if email already exists in database (cross-device sync)
+    // ALWAYS check database first for cross-device sync
     console.log('🔍 Checking if email exists in database...');
     console.log('API URL:', `/api/predictions?email=${encodeURIComponent(email.trim())}`);
     
@@ -160,13 +151,14 @@ export default function Predictor() {
         console.log('API Response data:', data);
         
         if (data.ok && data.prediction) {
-          // Found existing prediction! Load it
-          console.log('✅ Found existing prediction!');
+          // Found existing prediction in database! Load it
+          console.log('✅ Found existing prediction in cloud!');
           console.log('- Name:', data.prediction.name);
           console.log('- Email:', data.prediction.email);
           console.log('- Picks count:', data.prediction.picks_count);
           console.log('- Phase:', data.prediction.phase);
           
+          // Update local state with cloud data
           setName(data.prediction.name);
           setPicks(data.prediction.picks);
           setPhase(data.prediction.phase === 'result' ? 'result' : 'predict');
@@ -174,7 +166,7 @@ export default function Predictor() {
           window.scrollTo({ top: 0, behavior: "smooth" });
           return;
         } else {
-          console.log('📝 No existing prediction found for this email');
+          console.log('📝 No existing prediction found in cloud for this email');
         }
       } else {
         console.log('❌ API request failed with status:', res.status);
@@ -185,7 +177,16 @@ export default function Predictor() {
       console.error('❌ Error checking email:', err);
     }
     
-    // No existing prediction found, ask for name via modal
+    // No cloud data found - check if we have local name
+    if (name.trim()) {
+      console.log('✅ No cloud data, but have local name. Going to predict phase');
+      setCheckingEmail(false);
+      setPhase("predict");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    
+    // No cloud data, no local name - ask for name via modal
     const emailUser = email.split('@')[0];
     console.log('📝 Showing name modal, prefilling with:', emailUser);
     setNameModalInput(emailUser);
