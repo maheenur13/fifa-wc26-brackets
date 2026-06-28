@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { STORAGE_KEY } from "@/lib/storage";
+import { syncPrediction } from "@/lib/sync-prediction";
+import type { Picks } from "@/lib/bracket";
+import type { Phase } from "@/lib/storage";
 import styles from "./predictor.module.css";
 
 export default function EditProfile() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [picks, setPicks] = useState<Picks>({});
+  const [phase, setPhase] = useState<Phase>("intro");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -21,6 +26,8 @@ export default function EditProfile() {
         const saved = JSON.parse(raw);
         if (saved.email) setEmail(saved.email);
         if (saved.name) setName(saved.name);
+        if (saved.picks) setPicks(saved.picks);
+        if (saved.phase) setPhase(saved.phase);
       } else {
         // No user data, redirect to home
         router.push("/");
@@ -33,7 +40,7 @@ export default function EditProfile() {
     setLoading(false);
   }, [router]);
 
-  function handleSave() {
+  async function handleSave() {
     if (!name.trim()) return;
     
     setSaving(true);
@@ -44,6 +51,16 @@ export default function EditProfile() {
         const saved = JSON.parse(raw);
         saved.name = name.trim();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        
+        // Sync to cloud so name is updated across all devices
+        console.log('💾 Syncing name change to cloud...');
+        await syncPrediction({
+          name: name.trim(),
+          email: email,
+          picks: picks,
+          phase: phase
+        });
+        console.log('✅ Name synced to cloud');
       }
     } catch (err) {
       console.error("Error saving profile:", err);
@@ -110,10 +127,10 @@ export default function EditProfile() {
             <div className={styles.editActions}>
               <button
                 className={styles.btn}
-                onClick={handleSave}
+                onClick={() => void handleSave()}
                 disabled={!name.trim() || saving}
               >
-                {saving ? "Saving..." : "💾 Save Changes"}
+                {saving ? "Saving to Cloud..." : "💾 Save Changes"}
               </button>
               
               <button

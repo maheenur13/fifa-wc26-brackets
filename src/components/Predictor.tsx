@@ -33,31 +33,63 @@ export default function Predictor() {
   const [emailModalError, setEmailModalError] = useState("");
   const [nameModalError, setNameModalError] = useState("");
   const [checkingEmail, setCheckingEmail] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
   // an external system — the canonical place for this is an effect).
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved.name) setName(saved.name);
-        if (saved.email) setEmail(saved.email);
-        if (saved.picks) setPicks(saved.picks);
-        if (saved.phase) setPhase(saved.phase);
-        
-        // Check if existing user needs to add email
-        if (!saved.email && saved.phase !== "intro") {
-          setShowEmailModal(true);
+    async function loadAndRefresh() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved.name) setName(saved.name);
+          if (saved.email) setEmail(saved.email);
+          if (saved.picks) setPicks(saved.picks);
+          if (saved.phase) setPhase(saved.phase);
+          
+          // Check if existing user needs to add email
+          if (!saved.email && saved.phase !== "intro") {
+            setShowEmailModal(true);
+          }
+          
+          // Auto-refresh from cloud if user is logged in
+          if (saved.email && saved.phase !== "intro") {
+            console.log('🔄 Checking cloud for updates...');
+            try {
+              const res = await fetch(`/api/predictions?email=${encodeURIComponent(saved.email)}`);
+              if (res.ok) {
+                const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
+                if (data.ok && data.prediction) {
+                  console.log('✅ Found cloud data, refreshing...');
+                  // Update with latest cloud data
+                  if (data.prediction.name !== saved.name) {
+                    console.log(`📝 Name updated: "${saved.name}" → "${data.prediction.name}"`);
+                    setName(data.prediction.name);
+                    saved.name = data.prediction.name;
+                  }
+                  if (JSON.stringify(data.prediction.picks) !== JSON.stringify(saved.picks)) {
+                    console.log('📝 Picks updated from cloud');
+                    setPicks(data.prediction.picks);
+                    saved.picks = data.prediction.picks;
+                  }
+                  // Save updated data to localStorage
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                }
+              }
+            } catch (err) {
+              console.log('⚠️ Could not refresh from cloud:', err);
+            }
+          }
         }
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
+      setHydrated(true);
     }
-    setHydrated(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
+    
+    void loadAndRefresh();
   }, []);
 
   // Persist progress
@@ -229,6 +261,42 @@ export default function Predictor() {
     // Scroll to top
     window.scrollTo({ top: 0, behavior: "smooth" });
     console.log('✅ Logged out successfully');
+  }
+
+  async function handleRefreshFromCloud() {
+    if (!email || refreshing) return;
+    
+    setRefreshing(true);
+    console.log('🔄 Manual refresh from cloud...');
+    
+    try {
+      const res = await fetch(`/api/predictions?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
+        if (data.ok && data.prediction) {
+          console.log('✅ Loaded latest data from cloud');
+          setName(data.prediction.name);
+          setPicks(data.prediction.picks);
+          setPhase(data.prediction.phase === 'result' ? 'result' : 'predict');
+          
+          // Update localStorage
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+              name: data.prediction.name,
+              email: data.prediction.email,
+              picks: data.prediction.picks,
+              phase: data.prediction.phase
+            }));
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing from cloud:', err);
+    }
+    
+    setRefreshing(false);
   }
 
   function handleEmailModalSubmit() {
@@ -479,6 +547,16 @@ export default function Predictor() {
               <span className={styles.autoSyncIndicator}>
                 ☁ Syncing...
               </span>
+            )}
+            {!autoSyncing && (
+              <button 
+                className={styles.refreshBtn}
+                onClick={() => void handleRefreshFromCloud()}
+                disabled={refreshing}
+                title="Refresh from cloud"
+              >
+                {refreshing ? "↻" : "🔄"}
+              </button>
             )}
             <div className={styles.whoami}>
               <span>👤</span>
