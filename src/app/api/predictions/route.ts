@@ -64,6 +64,14 @@ export async function POST(request: Request) {
 
   try {
     const supabase = getSupabaseAdmin();
+
+    console.log("[API] Upserting prediction:", {
+      client_id: row.client_id,
+      email: row.email,
+      name: row.name,
+      picks_count: row.picks_count,
+    });
+
     const { data, error } = await supabase
       .from("predictions")
       .upsert(row, { onConflict: "client_id" })
@@ -71,19 +79,26 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error("Supabase upsert failed", error);
+      console.error("[API] Supabase upsert failed:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
-        { ok: false, error: "Could not save prediction." },
+        { ok: false, error: `Database error: ${error.message}` },
         { status: 500 },
       );
     }
+
+    console.log("[API] Successfully upserted prediction");
 
     return NextResponse.json({
       ok: true,
       updatedAt: data.updated_at as string,
     });
   } catch (err) {
-    console.error("Prediction sync error", err);
+    console.error("[API] Prediction sync error:", err);
     return NextResponse.json(
       { ok: false, error: "Server error." },
       { status: 500 },
