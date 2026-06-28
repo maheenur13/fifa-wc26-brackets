@@ -23,8 +23,11 @@ export default function Predictor() {
   const [hydrated, setHydrated] = useState(false);
   const [autoSyncing, setAutoSyncing] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
   const [emailModalInput, setEmailModalInput] = useState("");
+  const [nameModalInput, setNameModalInput] = useState("");
   const [emailModalError, setEmailModalError] = useState("");
+  const [nameModalError, setNameModalError] = useState("");
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
@@ -41,7 +44,7 @@ export default function Predictor() {
         if (saved.phase) setPhase(saved.phase);
         
         // Check if existing user needs to add email
-        if (saved.name && !saved.email && saved.phase !== "intro") {
+        if (!saved.email && saved.phase !== "intro") {
           setShowEmailModal(true);
         }
       }
@@ -116,7 +119,12 @@ export default function Predictor() {
   }
 
   function start() {
-    if (!name.trim() || !email.trim()) return;
+    if (!email.trim()) return;
+    // If no name yet, show name modal first
+    if (!name.trim()) {
+      setShowNameModal(true);
+      return;
+    }
     setPhase("predict");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -150,6 +158,27 @@ export default function Predictor() {
     setEmail(trimmedEmail);
     setShowEmailModal(false);
     setEmailModalInput("");
+  }
+
+  function handleNameModalSubmit() {
+    setNameModalError("");
+    const trimmedName = nameModalInput.trim();
+    
+    if (!trimmedName) {
+      setNameModalError("Name is required to continue.");
+      return;
+    }
+    
+    if (trimmedName.length < 2) {
+      setNameModalError("Name must be at least 2 characters.");
+      return;
+    }
+    
+    setName(trimmedName);
+    setShowNameModal(false);
+    setNameModalInput("");
+    setPhase("predict");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function download() {
@@ -209,25 +238,18 @@ export default function Predictor() {
           <div className={styles.nameRow}>
             <input
               className={styles.input}
-              placeholder="Enter your name"
-              value={name}
-              maxLength={28}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && name.trim() && email.trim() && start()}
-            />
-            <input
-              className={styles.input}
               type="email"
               placeholder="Enter your email"
               value={email}
               maxLength={60}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && name.trim() && email.trim() && start()}
+              onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
+              autoComplete="email"
             />
             <button
               className={styles.btn}
               onClick={start}
-              disabled={!name.trim() || !email.trim()}
+              disabled={!email.trim()}
             >
               Start →
             </button>
@@ -397,6 +419,39 @@ export default function Predictor() {
               </button>
               {emailModalError && (
                 <p className={styles.modalError}>{emailModalError}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Name Modal after Email */}
+      {showNameModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2 className={styles.modalTitle}>👤 What&apos;s Your Name?</h2>
+            <p className={styles.modalText}>
+              Your name will be displayed on your bracket and used to identify your predictions.
+            </p>
+            <div className={styles.modalForm}>
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="Enter your name"
+                value={nameModalInput}
+                maxLength={28}
+                onChange={(e) => setNameModalInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleNameModalSubmit()}
+                autoFocus
+              />
+              <button
+                className={styles.btn}
+                onClick={handleNameModalSubmit}
+              >
+                Start Predicting →
+              </button>
+              {nameModalError && (
+                <p className={styles.modalError}>{nameModalError}</p>
               )}
             </div>
           </div>
