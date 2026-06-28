@@ -125,20 +125,16 @@ export default function EditProfile() {
             </div>
           </div>
 
-          <div className={styles.dangerZone}>
-            <div className={styles.dangerHeader}>
-              <span className={styles.dangerIcon}>⚠️</span>
-              <span className={styles.dangerTitle}>Danger Zone</span>
-            </div>
-            <p className={styles.dangerText}>
-              Logging out will clear your local session. Your predictions are saved in the cloud with your email.
-            </p>
+          <div className={styles.logoutSection}>
             <button 
               className={styles.logoutBtn}
               onClick={() => setShowLogoutConfirm(true)}
             >
               🚪 Logout
             </button>
+            <p className={styles.logoutHint}>
+              Your predictions are saved in the cloud with your email.
+            </p>
           </div>
         </div>
       </main>

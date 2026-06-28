@@ -84,9 +84,9 @@
   margin-top: 12px;
   padding: 12px 20px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 107, 138, 0.3);
-  background: rgba(255, 107, 138, 0.08);
-  color: #ff6b8a;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -97,8 +97,8 @@
   gap: 6px;
 }
 .logoutBtn:hover {
-  border-color: rgba(255, 107, 138, 0.5);
-  background: rgba(255, 107, 138, 0.15);
+  border-color: var(--border-glow);
+  background: rgba(255, 255, 255, 0.08);
   transform: translateY(-1px);
 }
 .btnDanger {
@@ -1343,49 +1343,41 @@
   margin-top: 6px;
 }
 
-.dangerZone {
+.logoutSection {
   margin-top: 48px;
-  padding: 20px;
-  border: 2px solid rgba(255, 107, 138, 0.3);
+  padding: 20px 24px;
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: rgba(255, 107, 138, 0.05);
+  background: rgba(255, 255, 255, 0.02);
   max-width: 440px;
   width: 100%;
-}
-
-.dangerHeader {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
-.dangerIcon {
-  font-size: 20px;
+.logoutSection .logoutBtn {
+  width: 100%;
+  max-width: 280px;
 }
 
-.dangerTitle {
-  font-family: var(--font-orbitron), sans-serif;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #ff6b8a;
-}
-
-.dangerText {
+.logoutHint {
   color: var(--ink-dim);
-  font-size: 13px;
+  font-size: 12px;
+  text-align: center;
   line-height: 1.5;
-  margin-bottom: 16px;
 }
 
 @media (max-width: 640px) {
   .editActions {
     gap: 12px;
   }
-  .dangerZone {
+  .logoutSection {
     margin-top: 32px;
     width: 100%;
+  }
+  .logoutSection .logoutBtn {
+    max-width: 100%;
   }
 }
