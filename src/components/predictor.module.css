@@ -1413,13 +1413,20 @@
 .bracketShareTitle {
   font-family: var(--font-orbitron), sans-serif;
   font-weight: 900;
-  font-size: 28px;
+  font-size: 30px;
   line-height: 1;
   background: var(--grad-hot);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 18px rgba(255, 33, 81, 0.35));
+}
+.bracketShareSub {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 2px;
 }
 
 .bracketShareFooter {

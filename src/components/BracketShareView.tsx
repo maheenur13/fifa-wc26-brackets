@@ -17,11 +17,12 @@ const BracketShareView = forwardRef<HTMLDivElement, Props>(
   ({ name, picks, champ, onPick, onCrown }, ref) => {
     return (
       <div ref={ref} className={styles.bracketShareWrapper}>
-        {/* Header with branding */}
+        {/* Header — matches the champion card */}
         <div className={styles.bracketShareHeader}>
           <div className={styles.bracketShareBrand}>
-            <span className={styles.bracketShareKicker}>WC26 · KNOCKOUT PREDICTOR</span>
-            <span className={styles.bracketShareTitle}>ROAD TO THE FINAL</span>
+            <span className={styles.bracketShareKicker}>FIFA World Cup 2026</span>
+            <span className={styles.bracketShareTitle}>My Winner Prediction</span>
+            <span className={styles.bracketShareSub}>Full knockout bracket</span>
           </div>
         </div>
 
@@ -41,8 +42,8 @@ const BracketShareView = forwardRef<HTMLDivElement, Props>(
             <span className={styles.bracketShareName}>{name || "Anonymous"}</span>
           </div>
           <div className={styles.bracketShareBrandmark}>
-            <span>WC26</span>
-            <span>PREDICTOR</span>
+            <span>WC26 PREDICTOR</span>
+            <span>App by @maheenur13</span>
           </div>
         </div>
       </div>
