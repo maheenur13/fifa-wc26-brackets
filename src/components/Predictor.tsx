@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { prunePicks, champion, type Picks } from "@/lib/bracket";
+import { syncPrediction } from "@/lib/sync-prediction";
+import {
+  STORAGE_KEY,
+  type Phase,
+} from "@/lib/storage";
 import BracketTree from "./BracketTree";
 import ShareCard from "./ShareCard";
+import SyncButton from "./SyncButton";
 import styles from "./predictor.module.css";
-
-type Phase = "intro" | "predict" | "result";
-const STORAGE_KEY = "wc26-predictor-v1";
 
 export default function Predictor() {
   const [phase, setPhase] = useState<Phase>("intro");
@@ -47,6 +50,18 @@ export default function Predictor() {
       /* ignore */
     }
   }, [name, picks, phase, hydrated]);
+
+  // Auto-sync when a user crowns their champion (once per visit to result).
+  const prevPhaseRef = useRef<Phase>("intro");
+  useEffect(() => {
+    if (!hydrated) return;
+    const justFinished =
+      prevPhaseRef.current !== "result" && phase === "result";
+    prevPhaseRef.current = phase;
+    if (justFinished && champion(picks) && name.trim()) {
+      void syncPrediction({ name, picks, phase });
+    }
+  }, [hydrated, phase, name, picks]);
 
   const totalPicked = Object.values(picks).filter(Boolean).length;
   const progress = Math.round((totalPicked / 31) * 100);
@@ -161,9 +176,12 @@ export default function Predictor() {
             </div>
           </div>
           {totalPicked > 0 && (
-            <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
-              ↩ Resume your bracket ({progress}% done)
-            </button>
+            <>
+              <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
+                ↩ Resume your bracket ({progress}% done)
+              </button>
+              <SyncButton name={name} picks={picks} phase={phase} />
+            </>
           )}
         </div>
       </main>
@@ -188,6 +206,7 @@ export default function Predictor() {
       <main className={styles.shell}>
         <div className={`${styles.result} ${styles.pop}`}>
           <ShareCard ref={shareRef} name={name} picks={picks} champ={champ} />
+          <SyncButton name={name} picks={picks} phase={phase} />
           <div className={styles.resultActions}>
             <button className={styles.btn} onClick={download} disabled={downloading}>
               {downloading ? "Rendering…" : "📸 Save image"}
@@ -250,8 +269,8 @@ export default function Predictor() {
         }}
       />
 
-      {champ ? (
-        <div className={styles.predictFoot}>
+      <div className={styles.predictFoot}>
+        {champ ? (
           <button
             className={styles.btn}
             onClick={() => {
@@ -261,14 +280,13 @@ export default function Predictor() {
           >
             👑 Crown champion & share
           </button>
-        </div>
-      ) : (
-        <div className={styles.predictFoot}>
+        ) : (
           <span className={styles.hint}>
             Pick a winner in every match — the bracket fills in as you go.
           </span>
-        </div>
-      )}
+        )}
+        <SyncButton name={name} picks={picks} phase={phase} compact />
+      </div>
     </main>
   );
 }

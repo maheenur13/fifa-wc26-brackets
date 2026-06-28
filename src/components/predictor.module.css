@@ -897,6 +897,35 @@
   margin: 0 auto;
   padding: 22px 16px 40px;
 }
+
+.syncBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.syncCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.syncHint {
+  color: var(--ink-faint);
+  font-size: 12px;
+  text-align: center;
+  max-width: 320px;
+}
+
+.syncError {
+  color: #ff6b8a;
+  font-size: 12px;
+  text-align: center;
+}
 .headRight {
   display: flex;
   align-items: center;
