@@ -1326,3 +1326,66 @@
     padding: 28px 24px;
   }
 }
+
+/* Edit Profile Page Styles */
+.editField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.editActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.dangerZone {
+  margin-top: 48px;
+  padding: 20px;
+  border: 2px solid rgba(255, 107, 138, 0.3);
+  border-radius: 16px;
+  background: rgba(255, 107, 138, 0.05);
+  max-width: 440px;
+  width: 100%;
+}
+
+.dangerHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dangerIcon {
+  font-size: 20px;
+}
+
+.dangerTitle {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ff6b8a;
+}
+
+.dangerText {
+  color: var(--ink-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .editActions {
+    gap: 12px;
+  }
+  .dangerZone {
+    margin-top: 32px;
+    width: 100%;
+  }
+}

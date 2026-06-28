@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toPng } from "html-to-image";
 import { prunePicks, champion, type Picks } from "@/lib/bracket";
 import { syncPrediction } from "@/lib/sync-prediction";
@@ -15,6 +16,7 @@ import SyncButton from "./SyncButton";
 import styles from "./predictor.module.css";
 
 export default function Predictor() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("intro");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +28,6 @@ export default function Predictor() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [emailModalInput, setEmailModalInput] = useState("");
   const [nameModalInput, setNameModalInput] = useState("");
   const [emailModalError, setEmailModalError] = useState("");
@@ -131,7 +132,6 @@ export default function Predictor() {
     console.log('=== START CLICKED ===');
     console.log('Email:', email);
     console.log('Name:', name);
-    console.log('Edit mode:', isEditMode);
     console.log('Picks count:', Object.keys(picks).length);
     
     if (!email.trim()) {
@@ -140,16 +140,6 @@ export default function Predictor() {
     }
     
     setCheckingEmail(true);
-    
-    // If in edit mode, just save and return to bracket
-    if (isEditMode) {
-      console.log('✅ Edit mode: Saving changes and returning to bracket');
-      setIsEditMode(false);
-      setCheckingEmail(false);
-      setPhase("predict");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
     
     // ALWAYS check database first for cross-device sync
     console.log('🔍 Checking if email exists in database...');
@@ -227,7 +217,6 @@ export default function Predictor() {
     setPhase("intro");
     setAutoSyncing(false);
     setShowLogoutConfirm(false);
-    setIsEditMode(false);
     
     // Clear localStorage
     try {
@@ -325,64 +314,35 @@ export default function Predictor() {
 
   // ---------------- INTRO ----------------
   if (phase === "intro") {
-    // Determine if this is login (no email/name) or edit (has email/name)
-    const isEditing = isEditMode || (email.trim() !== '' && name.trim() !== '');
-    
     return (
       <>
         <main className={styles.shell}>
           <div className={`${styles.intro} ${styles.fadeIn}`}>
             <span className={styles.introTag}>FIFA World Cup 2026 · Knockout</span>
             <h1 className={styles.introTitle}>
-              {isEditing ? "EDIT\nPROFILE" : "PREDICT\nTHE BRACKET"}
+              PREDICT{"\n"}THE BRACKET
             </h1>
             <p className={styles.introSub}>
-              {isEditing 
-                ? "Update your name. Email cannot be changed as it's used to identify your predictions across devices."
-                : "The Round of 32 is locked in. Call every knockout game from the last 32 all the way to the Final — then crown your champion and share it."
-              }
+              The Round of 32 is locked in. Call every knockout game from the last 32 all the way to the Final — then crown your champion and share it.
             </p>
             <div className={styles.nameRow}>
-              {!isEditing && (
-                <input
-                  className={styles.input}
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  maxLength={60}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
-                  autoComplete="email"
-                  autoFocus
-                />
-              )}
-              {isEditing && (
-                <>
-                  <div className={styles.lockedField}>
-                    <label className={styles.fieldLabel}>Email (locked)</label>
-                    <div className={styles.lockedInput}>
-                      🔒 {email}
-                    </div>
-                  </div>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    placeholder="Enter your name"
-                    value={name}
-                    maxLength={28}
-                    onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && name.trim() && start()}
-                    autoComplete="name"
-                    autoFocus
-                  />
-                </>
-              )}
+              <input
+                className={styles.input}
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                maxLength={60}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
+                autoComplete="email"
+                autoFocus
+              />
               <button
                 className={styles.btn}
                 onClick={() => void start()}
-                disabled={(!email.trim() || checkingEmail) || (isEditing && !name.trim())}
+                disabled={!email.trim() || checkingEmail}
               >
-                {checkingEmail ? "Checking..." : (isEditing ? "Save & Continue →" : "Start →")}
+                {checkingEmail ? "Checking..." : "Start →"}
               </button>
             </div>
             <div className={styles.statStrip}>
@@ -403,32 +363,12 @@ export default function Predictor() {
                 <span className={styles.statLabel}>Champion</span>
               </div>
             </div>
-            {totalPicked > 0 && !isEditing && (
+            {totalPicked > 0 && (
               <>
                 <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
                   ↩ Resume your bracket ({progress}% done)
                 </button>
                 <SyncButton name={name} email={email} picks={picks} phase={phase} />
-              </>
-            )}
-            {isEditing && (
-              <>
-                <button 
-                  className={styles.linkbtn} 
-                  onClick={() => {
-                    setIsEditMode(false);
-                    setPhase("predict");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                >
-                  ← Cancel and go back
-                </button>
-                <button 
-                  className={styles.logoutBtn}
-                  onClick={() => setShowLogoutConfirm(true)}
-                >
-                  🚪 Logout
-                </button>
               </>
             )}
           </div>
@@ -543,10 +483,7 @@ export default function Predictor() {
             <div className={styles.whoami}>
               <span>👤</span>
               <b>{name || "Player"}</b>
-              <button className={styles.linkbtn} onClick={() => {
-                setIsEditMode(true);
-                setPhase("intro");
-              }}>
+              <button className={styles.linkbtn} onClick={() => router.push("/edit")}>
                 edit
               </button>
               <span className={styles.divider}>|</span>
