@@ -25,6 +25,7 @@ export default function Predictor() {
   const [autoSyncing, setAutoSyncing] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [emailModalInput, setEmailModalInput] = useState("");
   const [nameModalInput, setNameModalInput] = useState("");
   const [emailModalError, setEmailModalError] = useState("");
@@ -204,6 +205,30 @@ export default function Predictor() {
     }
   }
 
+  function handleLogout() {
+    console.log('Logout initiated');
+    
+    // Clear all state
+    setEmail("");
+    setName("");
+    setPicks({});
+    setPhase("intro");
+    setAutoSyncing(false);
+    setShowLogoutConfirm(false);
+    
+    // Clear localStorage
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      console.log('✅ LocalStorage cleared');
+    } catch (err) {
+      console.error('Error clearing localStorage:', err);
+    }
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    console.log('✅ Logged out successfully');
+  }
+
   function handleEmailModalSubmit() {
     setEmailModalError("");
     const trimmedEmail = emailModalInput.trim();
@@ -374,15 +399,23 @@ export default function Predictor() {
               </>
             )}
             {isEditing && (
-              <button 
-                className={styles.linkbtn} 
-                onClick={() => {
-                  setPhase("predict");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-              >
-                ← Cancel and go back
-              </button>
+              <>
+                <button 
+                  className={styles.linkbtn} 
+                  onClick={() => {
+                    setPhase("predict");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                >
+                  ← Cancel and go back
+                </button>
+                <button 
+                  className={styles.logoutBtn}
+                  onClick={() => setShowLogoutConfirm(true)}
+                >
+                  🚪 Logout
+                </button>
+              </>
             )}
           </div>
         </main>
@@ -499,6 +532,10 @@ export default function Predictor() {
               <button className={styles.linkbtn} onClick={() => setPhase("intro")}>
                 edit
               </button>
+              <span className={styles.divider}>|</span>
+              <button className={styles.linkbtn} onClick={() => setShowLogoutConfirm(true)}>
+                logout
+              </button>
             </div>
           </div>
         </header>
@@ -595,6 +632,35 @@ export default function Predictor() {
                 <p className={styles.modalError}>{nameModalError}</p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2 className={styles.modalTitle}>🚪 Logout</h2>
+            <p className={styles.modalText}>
+              Are you sure you want to logout? Your predictions are saved to the cloud with your email (<strong>{email}</strong>), so you can login again anytime.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnGhost}
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.btnDanger}
+                onClick={handleLogout}
+              >
+                Yes, Logout
+              </button>
+            </div>
+            <p className={styles.hint}>
+              💡 Tip: Your predictions will remain in the cloud. Login with the same email to access them.
+            </p>
           </div>
         </div>
       )}

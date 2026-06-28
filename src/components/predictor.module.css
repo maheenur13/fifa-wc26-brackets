@@ -51,12 +51,76 @@
 .whoami b {
   color: var(--ink);
 }
+.divider {
+  color: var(--border);
+  font-size: 11px;
+}
 .linkbtn {
   background: none;
   border: none;
   color: var(--neon-pink);
   font-size: 12px;
   padding: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.linkbtn:hover {
+  opacity: 0.8;
+}
+.logoutBtn {
+  margin-top: 12px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 107, 138, 0.3);
+  background: rgba(255, 107, 138, 0.08);
+  color: #ff6b8a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.logoutBtn:hover {
+  border-color: rgba(255, 107, 138, 0.5);
+  background: rgba(255, 107, 138, 0.15);
+  transform: translateY(-1px);
+}
+.btnDanger {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff4757, #ff6b7a);
+  box-shadow: 0 8px 30px -8px rgba(255, 71, 87, 0.7);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.btnDanger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px -8px rgba(255, 71, 87, 0.85);
+}
+.btnDanger:active {
+  transform: translateY(0);
+}
+.modalActions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+.modalActions .btnGhost,
+.modalActions .btnDanger {
+  flex: 1;
 }
 
 /* ---------------- Intro ---------------- */
