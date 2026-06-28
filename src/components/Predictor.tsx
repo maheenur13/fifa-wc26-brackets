@@ -36,7 +36,6 @@ export default function Predictor() {
   const [refreshing, setRefreshing] = useState(false);
   const [screenshotMode, setScreenshotMode] = useState<"card" | "bracket">("bracket");
   const shareRef = useRef<HTMLDivElement>(null);
-  const bracketRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
   // an external system — the canonical place for this is an effect).
@@ -356,41 +355,35 @@ export default function Predictor() {
   }
 
   async function download() {
-    // Choose which view to capture based on mode
-    const targetRef = screenshotMode === "bracket" ? bracketRef.current : shareRef.current;
+    setShareError(false);
+    setDownloading(true);
     
-    // If bracket mode but bracket not available, we need to switch phases temporarily
-    if (screenshotMode === "bracket" && !bracketRef.current) {
-      console.log("Bracket not available in result phase, switching to predict phase...");
-      
-      // Switch to predict phase temporarily
+    // For bracket mode, need to temporarily switch to predict phase
+    if (screenshotMode === "bracket" && phase === "result") {
       const originalPhase = phase;
       setPhase("predict");
       
-      // Wait for next render cycle
       setTimeout(async () => {
-        // Now bracket should be rendered
-        if (!bracketRef.current) {
-          console.error("Bracket still not available after phase switch");
-          setPhase(originalPhase); // Switch back
-          alert("Could not capture bracket. Please try again.");
-          return;
-        }
-        
-        setShareError(false);
-        setDownloading(true);
-        
         try {
           if (document.fonts?.ready) {
             await document.fonts.ready;
           }
           
-          const node = bracketRef.current;
-          const render = toPng(node, {
+          // Find the viewport element (the actual bracket, without controls)
+          const viewport = document.querySelector(`.${styles.viewport}`) as HTMLElement;
+          if (!viewport) {
+            console.error("Could not find bracket viewport");
+            alert("Could not capture bracket. Please try again.");
+            setPhase(originalPhase);
+            setDownloading(false);
+            return;
+          }
+          
+          const render = toPng(viewport, {
             pixelRatio: 2,
             backgroundColor: "#060418",
-            width: node.scrollWidth,
-            height: node.scrollHeight,
+            width: viewport.scrollWidth,
+            height: viewport.scrollHeight,
           });
           
           const dataUrl = await Promise.race([
@@ -412,7 +405,6 @@ export default function Predictor() {
           setShareError(true);
         } finally {
           setDownloading(false);
-          // Switch back to result phase
           setPhase(originalPhase);
         }
       }, 100);
@@ -420,38 +412,36 @@ export default function Predictor() {
       return;
     }
     
-    if (!targetRef) {
-      console.error("Target ref not available:", screenshotMode);
+    // For card mode, use shareRef
+    if (!shareRef.current) {
+      console.error("Share card ref not available");
+      setDownloading(false);
       return;
     }
     
-    setShareError(false);
-    setDownloading(true);
     try {
       if (document.fonts?.ready) {
         await document.fonts.ready;
       }
-      const node = targetRef;
       
-      // For bracket view, capture the entire scrollable viewport
-      const isBracket = screenshotMode === "bracket";
+      const node = shareRef.current;
       const render = toPng(node, {
         pixelRatio: 2,
         backgroundColor: "#060418",
-        width: isBracket ? node.scrollWidth : node.offsetWidth,
-        height: isBracket ? node.scrollHeight : node.offsetHeight,
+        width: node.offsetWidth,
+        height: node.offsetHeight,
       });
       
       const dataUrl = await Promise.race([
         render,
         new Promise<string>((_, reject) =>
-          setTimeout(() => reject(new Error("render-timeout")), 15000)
+          setTimeout(() => reject(new Error("render-timeout")), 12000)
         ),
       ]);
+      
       const link = document.createElement("a");
       const safe = (name.trim() || "anonymous").replace(/[^a-z0-9]+/gi, "-");
-      const fileType = isBracket ? "bracket" : "card";
-      link.download = `wc26-${safe}-${fileType}-${champ ?? "prediction"}.png`;
+      link.download = `wc26-${safe}-card-${champ ?? "prediction"}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -674,17 +664,15 @@ export default function Predictor() {
           </div>
         </header>
 
-        <div ref={bracketRef}>
-          <BracketTree
-            picks={picks}
-            onPick={handlePick}
-            champ={champ}
-            onCrown={() => {
-              setPhase("result");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          />
-        </div>
+        <BracketTree
+          picks={picks}
+          onPick={handlePick}
+          champ={champ}
+          onCrown={() => {
+            setPhase("result");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
 
         <div className={styles.predictFoot}>
           {champ ? (
