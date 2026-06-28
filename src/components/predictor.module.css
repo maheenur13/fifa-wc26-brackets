@@ -7,6 +7,7 @@
 
 /* ---------------- Header ---------------- */
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1179,77 +1180,87 @@
   .topbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
+  }
+  .brand {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
   .headRight {
     width: 100%;
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
-    align-items: center;
-    flex-wrap: nowrap;
+    align-items: stretch;
   }
+  /* User info - compact single row */
   .whoami {
-    flex: 1 !important;
+    width: 100%;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
-    padding: 8px 12px !important;
-    gap: 8px !important;
-    border-radius: 12px !important;
-    white-space: nowrap !important;
+    padding: 6px 10px !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    justify-content: space-between !important;
     min-width: 0 !important;
+  }
+  /* Hide emoji on mobile to save space */
+  .whoami > span:first-child {
+    display: none !important;
   }
   .whoami b {
     flex: 1 !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     text-align: left !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
     min-width: 0 !important;
     max-width: none !important;
+    font-weight: 700 !important;
   }
-  .divider {
-    display: inline !important;
-    margin: 0 4px !important;
-  }
-  .whoami > span:first-child {
-    font-size: 18px !important;
-    flex-shrink: 0 !important;
-  }
+  /* Compact button group */
   .whoami .linkbtn {
     width: auto !important;
-    padding: 4px 8px !important;
-    min-height: 28px !important;
-    border: none !important;
-    background: transparent !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
+    padding: 5px 10px !important;
+    min-height: 30px !important;
+    border: 1px solid var(--border) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
     flex-shrink: 0 !important;
-  }
-  .whoami .linkbtn:hover {
-    background: rgba(255, 33, 81, 0.12) !important;
     border-radius: 6px !important;
   }
   .whoami .linkbtn:active {
-    background: rgba(255, 255, 255, 0.08) !important;
-    transform: none !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(0.95) !important;
   }
+  .divider {
+    display: none !important;
+  }
+  /* Progress bar - keep on separate row */
   .progressMini {
-    min-width: 100%;
     width: 100%;
+    order: -1;
   }
+  /* Sync indicator - inline with progress */
   .autoSyncIndicator {
-    font-size: 11px;
-    padding: 6px 10px;
+    font-size: 10px;
+    padding: 4px 8px;
     text-align: center;
   }
+  /* Refresh button - small icon only */
   .refreshBtn {
-    flex-shrink: 0;
-    min-width: 36px;
-    min-height: 36px;
-    font-size: 16px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    font-size: 14px !important;
+    padding: 6px !important;
+    z-index: 10;
   }
 }
 
