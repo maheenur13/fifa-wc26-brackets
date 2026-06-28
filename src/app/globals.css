@@ -1,13 +1,64 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- Adidas TRIONDA palette (2026 official match ball) ----
+     White base ball with swirling "la ola" waves:
+     red = Canada, blue = USA, green = Mexico, gold = the trophy. */
+  --tri-red: #ff2151;
+  --tri-red-deep: #e0093c;
+  --tri-blue: #2a7bff;
+  --tri-blue-deep: #0b3fb0;
+  --tri-green: #15c06a;
+  --tri-green-deep: #0a8f4d;
+  --tri-gold: #ffc83d;
+  --tri-gold-deep: #f5a623;
+  --tri-white: #f4f7ff;
+
+  /* Deep navy stage so the tricolor + gold pops, retro/dark mode */
+  --bg-0: #060a18;
+  --bg-1: #08102a;
+  --bg-2: #0c1738;
+  --ink: #eef2ff;
+  --ink-dim: #aab6dd;
+  --ink-faint: #6f7cae;
+
+  /* Legacy accent names kept, repointed to Trionda hues so the whole
+     component layer follows the ball without per-rule rewrites. */
+  --neon-pink: var(--tri-red);
+  --neon-magenta: var(--tri-red-deep);
+  --neon-purple: var(--tri-blue);
+  --neon-blue: var(--tri-blue);
+  --neon-cyan: var(--tri-gold);
+  --neon-yellow: var(--tri-gold);
+  --neon-orange: var(--tri-red);
+  --neon-green: var(--tri-green);
+
+  /* The signature "la ola" wave sweep: red → gold → green → blue */
+  --grad-hot: linear-gradient(
+    110deg,
+    #ff2151 0%,
+    #ffc83d 34%,
+    #15c06a 64%,
+    #2a7bff 100%
+  );
+  /* Trophy gold → red, used for the champion */
+  --grad-sun: linear-gradient(180deg, #ffe08a 0%, #ffc83d 35%, #ff5a36 70%, #ff2151 100%);
+  --grad-deep: linear-gradient(160deg, #0a1230 0%, #0d1838 52%, #0c1f33 100%);
+
+  --card: rgba(255, 255, 255, 0.04);
+  --card-strong: rgba(255, 255, 255, 0.07);
+  --border: rgba(122, 150, 230, 0.26);
+  --border-glow: rgba(255, 33, 81, 0.55);
+
+  --radius: 16px;
+  --shadow-glow: 0 0 0 1px rgba(255, 200, 61, 0.18),
+    0 10px 40px -12px rgba(11, 63, 176, 0.6);
+
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
 }
 
 html {
@@ -21,20 +72,65 @@ body {
 }
 
 body {
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  background: var(--bg-0);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* Trionda backdrop: three national color pools + a sweeping gold wave */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(80% 60% at 12% -8%, rgba(255, 33, 81, 0.3), transparent 55%),
+    radial-gradient(80% 60% at 90% 4%, rgba(42, 123, 255, 0.26), transparent 55%),
+    radial-gradient(90% 70% at 50% 116%, rgba(21, 192, 106, 0.26), transparent 60%),
+    var(--bg-0);
+}
+
+/* The "la ola" — drifting diagonal wave bands echoing the ball seams */
+body .wavefield {
+  position: fixed;
+  inset: -20% -10% 0 -10%;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent 0px,
+    transparent 120px,
+    rgba(255, 200, 61, 0.05) 120px,
+    rgba(255, 200, 61, 0.05) 124px
+  );
+  -webkit-mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 75%);
+  animation: drift 26s linear infinite;
+}
+
+/* Retro scanlines */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(6, 10, 24, 0.35) 3px,
+    rgba(6, 10, 24, 0.35) 4px
+  );
+  opacity: 0.45;
+  mix-blend-mode: multiply;
 }
 
 a {
@@ -42,8 +138,129 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(255, 33, 81, 0.45);
+  color: #fff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 175, 220, 0.22) transparent;
+}
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(160, 175, 220, 0.22);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 175, 220, 0.4);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(124px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---- Site footer / author branding ---- */
+.siteFooter {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  width: 100%;
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 22px 18px calc(26px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 22px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+}
+.sfWho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.15s ease;
+}
+.sfWho:hover {
+  transform: translateY(-1px);
+}
+.sfAvatar {
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--bg-1), var(--bg-1)) padding-box,
+    var(--grad-hot) border-box;
+  box-shadow: 0 6px 18px -8px rgba(255, 33, 81, 0.6);
+}
+.sfWhoText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.sfWhoText b {
+  font-size: 14px;
+  color: var(--ink);
+}
+.sfWhoText em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+.sfLinks {
+  display: flex;
+  gap: 8px;
+}
+.sfLinks a {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: all 0.15s ease;
+}
+.sfLinks a:hover {
+  color: var(--ink);
+  border-color: var(--border-glow);
+}
+.sfNote {
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.3px;
+}
+@media (max-width: 640px) {
+  .siteFooter {
+    justify-content: center;
+    text-align: center;
+  }
+  .sfNote {
+    width: 100%;
+    order: 3;
   }
 }
