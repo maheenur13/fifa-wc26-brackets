@@ -68,6 +68,20 @@
   justify-content: center;
   text-align: center;
   gap: 22px;
+  padding: 0 16px;
+}
+
+@media (max-width: 640px) {
+  .intro {
+    padding: 0 20px;
+  }
+  .intro .linkbtn,
+  .intro .btn {
+    min-height: 48px;
+    padding: 14px 24px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 .introTag {
   font-family: var(--font-orbitron), sans-serif;
@@ -100,6 +114,17 @@
   gap: 10px;
   width: min(440px, 92vw);
   margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .nameRow {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .nameRow .btn {
+    width: 100%;
+  }
 }
 .input {
   flex: 1;
@@ -159,6 +184,12 @@
   box-shadow: 0 8px 30px -8px rgba(255, 33, 81, 0.7);
   transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.2s;
   white-space: nowrap;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn:hover {
   transform: translateY(-2px);
@@ -178,12 +209,29 @@
   color: var(--ink-dim);
   border: 1px solid var(--border);
   box-shadow: none;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .btnGhost:hover {
   color: var(--ink);
   border-color: var(--border-glow);
   box-shadow: none;
   transform: translateY(-2px);
+}
+
+/* Mobile button improvements */
+@media (max-width: 640px) {
+  .btn,
+  .btnGhost {
+    min-height: 52px;
+    padding: 16px 24px;
+    font-size: 16px;
+    width: 100%;
+  }
 }
 
 /* ---------------- Round progress ---------------- */
@@ -569,6 +617,14 @@
   gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .resultActions {
+    flex-direction: column;
+    gap: 10px;
+  }
 }
 .hint {
   color: var(--ink-faint);
@@ -904,6 +960,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 8px;
+  width: 100%;
 }
 
 .syncCompact {
@@ -912,6 +969,15 @@
   align-items: center;
   gap: 6px;
   margin-top: 14px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .syncBlock button,
+  .syncCompact button {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .syncHint {
@@ -952,8 +1018,21 @@
 }
 .predictFoot {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   justify-content: center;
   margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .predictFoot {
+    padding: 0 16px;
+  }
+  .predictFoot .btn {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 @media (max-width: 640px) {
   .topbar {
@@ -964,6 +1043,19 @@
   .headRight {
     width: 100%;
     justify-content: space-between;
+  }
+  .whoami {
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+  .progressMini {
+    min-width: 140px;
+  }
+  .linkbtn {
+    padding: 8px 12px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
