@@ -1189,50 +1189,52 @@
     flex-wrap: nowrap;
   }
   .whoami {
-    flex: 1;
-    flex-direction: row;
-    padding: 8px 12px;
-    gap: 8px;
-    border-radius: 12px;
-    white-space: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    min-width: 0;
+    flex: 1 !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
   }
   .whoami b {
-    flex: 1;
-    font-size: 13px;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+    flex: 1 !important;
+    font-size: 13px !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+    max-width: none !important;
   }
   .divider {
-    display: inline;
-    margin: 0 4px;
+    display: inline !important;
+    margin: 0 4px !important;
   }
   .whoami > span:first-child {
-    font-size: 18px;
-    flex-shrink: 0;
+    font-size: 18px !important;
+    flex-shrink: 0 !important;
   }
   .whoami .linkbtn {
-    width: auto;
-    padding: 4px 8px;
-    min-height: 28px;
-    border: none;
-    background: transparent;
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
+    width: auto !important;
+    padding: 4px 8px !important;
+    min-height: 28px !important;
+    border: none !important;
+    background: transparent !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    flex-shrink: 0 !important;
   }
   .whoami .linkbtn:hover {
-    background: rgba(255, 33, 81, 0.12);
-    border-radius: 6px;
+    background: rgba(255, 33, 81, 0.12) !important;
+    border-radius: 6px !important;
   }
   .whoami .linkbtn:active {
-    background: rgba(255, 255, 255, 0.08);
-    transform: none;
+    background: rgba(255, 255, 255, 0.08) !important;
+    transform: none !important;
   }
   .progressMini {
     min-width: 100%;
