@@ -97,7 +97,10 @@ export async function GET(request: Request) {
 
   // If email param is provided, return that specific prediction (for cross-device sync)
   if (email) {
+    console.log("[API] GET /api/predictions with email:", email);
+
     if (!isSupabaseConfigured()) {
+      console.log("[API] Supabase not configured");
       return NextResponse.json(
         { ok: false, error: "Database is not configured." },
         { status: 503 },
@@ -106,15 +109,20 @@ export async function GET(request: Request) {
 
     try {
       const supabase = getSupabaseAdmin();
+      const normalizedEmail = email.toLowerCase().trim();
+      console.log("[API] Searching for email:", normalizedEmail);
+
       const { data, error } = await supabase
         .from("predictions")
         .select("*")
-        .eq("email", email.toLowerCase().trim())
+        .eq("email", normalizedEmail)
         .single();
 
       if (error) {
+        console.log("[API] Supabase error:", error.code, error.message);
         if (error.code === "PGRST116") {
           // No rows found
+          console.log("[API] No prediction found for email:", normalizedEmail);
           return NextResponse.json({ ok: true, prediction: null });
         }
         console.error("Supabase fetch by email failed", error);
@@ -124,6 +132,11 @@ export async function GET(request: Request) {
         );
       }
 
+      console.log("[API] Found prediction:", {
+        name: data.name,
+        email: data.email,
+        picks_count: data.picks_count,
+      });
       return NextResponse.json({ ok: true, prediction: data });
     } catch (err) {
       console.error("Prediction fetch error", err);
