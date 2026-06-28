@@ -3,7 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toPng } from "html-to-image";
-import { prunePicks, champion, type Picks } from "@/lib/bracket";
+import {
+  prunePicks,
+  champion,
+  isLocked,
+  liveMatches,
+  resolveTeams,
+  MATCH_BY_ID,
+  type Picks,
+} from "@/lib/bracket";
+import { getTeam } from "@/lib/teams";
 import { syncPrediction } from "@/lib/sync-prediction";
 import {
   STORAGE_KEY,
@@ -26,6 +35,7 @@ export default function Predictor() {
   const [downloading, setDownloading] = useState(false);
   const [shareError, setShareError] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [now, setNow] = useState(0);
   const [autoSyncing, setAutoSyncing] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -169,11 +179,34 @@ export default function Predictor() {
     console.log('showNameModal changed to:', showNameModal);
   }, [showNameModal]);
 
+  // Live clock used for kickoff locking. Supports an optional ?now=ISO override
+  // so the time-based lock/live states can be previewed.
+  useEffect(() => {
+    let offset = 0;
+    try {
+      const p = new URLSearchParams(window.location.search).get("now");
+      if (p) {
+        const t = Date.parse(p);
+        if (!Number.isNaN(t)) offset = t - Date.now();
+      }
+    } catch {
+      /* ignore */
+    }
+    const tick = () => setNow(Date.now() + offset);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    tick();
+    const iv = setInterval(tick, 30000);
+    return () => clearInterval(iv);
+  }, []);
+
   const totalPicked = Object.values(picks).filter(Boolean).length;
   const progress = Math.round((totalPicked / 31) * 100);
   const champ = champion(picks);
+  const liveNow = now ? liveMatches(now) : [];
 
   function handlePick(matchId: number, teamId: string) {
+    // Picks lock at kickoff — ignore changes to a started/finished match.
+    if (now && isLocked(MATCH_BY_ID[matchId], now)) return;
     setPicks((prev) => prunePicks({ ...prev, [matchId]: teamId }));
   }
 
@@ -731,10 +764,32 @@ export default function Predictor() {
           </div>
         </header>
 
+        {liveNow.length > 0 && (
+          <div className={styles.liveBanner}>
+            <span className={styles.liveBannerDot} />
+            <span className={styles.liveBannerLabel}>LIVE NOW</span>
+            <span className={styles.liveBannerList}>
+              {liveNow.map((m, i) => {
+                const { team1, team2 } = resolveTeams(m, picks);
+                const a = team1 ? getTeam(team1).name : "TBD";
+                const b = team2 ? getTeam(team2).name : "TBD";
+                return (
+                  <span key={m.id} className={styles.liveBannerMatch}>
+                    {a} vs {b}
+                    {i < liveNow.length - 1 ? " · " : ""}
+                  </span>
+                );
+              })}
+            </span>
+            <span className={styles.liveBannerHint}>— locking soon</span>
+          </div>
+        )}
+
         <BracketTree
           picks={picks}
           onPick={handlePick}
           champ={champ}
+          now={now}
           onCrown={() => {
             setPhase("result");
             window.scrollTo({ top: 0, behavior: "smooth" });

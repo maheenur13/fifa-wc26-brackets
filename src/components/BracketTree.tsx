@@ -11,6 +11,8 @@ import {
 import {
   MATCH_BY_ID,
   resolveTeams,
+  isLocked,
+  isLive,
   type Match,
   type Picks,
 } from "@/lib/bracket";
@@ -22,6 +24,8 @@ type Props = {
   onPick: (matchId: number, teamId: string) => void;
   champ?: string;
   onCrown: () => void;
+  /** Current time (ms) for kickoff-based locking; 0 disables locking. */
+  now?: number;
   /** Static, full-size render for screenshot export (no scroll/zoom/toolbar). */
   capture?: boolean;
 };
@@ -108,16 +112,20 @@ function CompactMatch({
   onPick,
   emphasize,
   pulse,
+  now = 0,
 }: {
   match: Match;
   picks: Picks;
   onPick: (matchId: number, teamId: string) => void;
   emphasize?: boolean;
   pulse?: boolean;
+  now?: number;
 }) {
   const { team1, team2 } = resolveTeams(match, picks);
   const ready = Boolean(team1 && team2);
   const picked = picks[match.id];
+  const locked = now > 0 && isLocked(match, now);
+  const live = now > 0 && isLive(match, now);
 
   const renderRow = (teamId?: string) => {
     if (!teamId) {
@@ -135,6 +143,7 @@ function CompactMatch({
       isPicked ? styles.cpicked : "",
       picked && !isPicked ? styles.cdimmed : "",
       !ready ? styles.cdisabled : "",
+      locked ? styles.clocked : "",
     ]
       .filter(Boolean)
       .join(" ");
@@ -142,10 +151,10 @@ function CompactMatch({
       <button
         type="button"
         className={cls}
-        disabled={!ready}
+        disabled={!ready || locked}
         onClick={() => onPick(match.id, teamId)}
         aria-pressed={isPicked}
-        title={team.name}
+        title={locked ? `${team.name} — locked at kickoff` : team.name}
       >
         <span className={styles.cflag}>{team.flag}</span>
         <span className={styles.ccode}>{team.code}</span>
@@ -162,13 +171,16 @@ function CompactMatch({
     styles.cmatch,
     emphasize ? styles.cmatchBig : "",
     picked ? styles.cdecided : "",
-    pulse ? styles.cpulse : "",
+    pulse && !locked ? styles.cpulse : "",
+    live ? styles.cmatchLive : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
     <div className={cardCls} data-mid={match.id}>
+      {live && <span className={styles.liveBadge}>● LIVE</span>}
+      {locked && !live && <span className={styles.lockBadge}>🔒</span>}
       {renderRow(team1)}
       {renderRow(team2)}
     </div>
@@ -180,6 +192,7 @@ export default function BracketTree({
   onPick,
   champ,
   onCrown,
+  now = 0,
   capture = false,
 }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -303,6 +316,7 @@ export default function BracketTree({
           picks={picks}
           onPick={onPick}
           pulse={id === pulseId}
+          now={now}
         />
       ))}
     </div>
@@ -419,6 +433,7 @@ export default function BracketTree({
                     picks={picks}
                     onPick={onPick}
                     emphasize
+                    now={now}
                   />
                 </div>
                 {champ && (
