@@ -140,6 +140,34 @@
   border-color: var(--border-glow);
   box-shadow: 0 0 0 3px rgba(255, 33, 81, 0.18);
 }
+
+.lockedField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.lockedInput {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  color: var(--ink-dim);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.7;
+}
 .statStrip {
   display: flex;
   gap: 26px;

@@ -287,47 +287,64 @@ export default function Predictor() {
 
   // ---------------- INTRO ----------------
   if (phase === "intro") {
+    // Determine if this is login (no email/name) or edit (has email/name)
+    const isEditing = email.trim() !== '' && name.trim() !== '';
+    
     return (
       <>
         <main className={styles.shell}>
           <div className={`${styles.intro} ${styles.fadeIn}`}>
             <span className={styles.introTag}>FIFA World Cup 2026 · Knockout</span>
             <h1 className={styles.introTitle}>
-              PREDICT
-              <br />
-              THE BRACKET
+              {isEditing ? "EDIT\nPROFILE" : "PREDICT\nTHE BRACKET"}
             </h1>
             <p className={styles.introSub}>
-              The Round of 32 is locked in. Call every knockout game from the last
-              32 all the way to the Final — then crown your champion and share it.
+              {isEditing 
+                ? "Update your name. Email cannot be changed as it's used to identify your predictions across devices."
+                : "The Round of 32 is locked in. Call every knockout game from the last 32 all the way to the Final — then crown your champion and share it."
+              }
             </p>
             <div className={styles.nameRow}>
-              <input
-                className={styles.input}
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                maxLength={60}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && email.trim() && name.trim() && start()}
-                autoComplete="email"
-              />
-              <input
-                className={styles.input}
-                type="text"
-                placeholder="Enter your name"
-                value={name}
-                maxLength={28}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && email.trim() && name.trim() && start()}
-                autoComplete="name"
-              />
+              {!isEditing && (
+                <input
+                  className={styles.input}
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  maxLength={60}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
+                  autoComplete="email"
+                  autoFocus
+                />
+              )}
+              {isEditing && (
+                <>
+                  <div className={styles.lockedField}>
+                    <label className={styles.fieldLabel}>Email (locked)</label>
+                    <div className={styles.lockedInput}>
+                      🔒 {email}
+                    </div>
+                  </div>
+                  <input
+                    className={styles.input}
+                    type="text"
+                    placeholder="Enter your name"
+                    value={name}
+                    maxLength={28}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && name.trim() && start()}
+                    autoComplete="name"
+                    autoFocus
+                  />
+                </>
+              )}
               <button
                 className={styles.btn}
                 onClick={() => void start()}
-                disabled={!email.trim() || !name.trim() || checkingEmail}
+                disabled={(!email.trim() || checkingEmail) || (isEditing && !name.trim())}
               >
-                {checkingEmail ? "Checking..." : (totalPicked > 0 ? "Update →" : "Start →")}
+                {checkingEmail ? "Checking..." : (isEditing ? "Save & Continue →" : "Start →")}
               </button>
             </div>
             <div className={styles.statStrip}>
@@ -348,13 +365,24 @@ export default function Predictor() {
                 <span className={styles.statLabel}>Champion</span>
               </div>
             </div>
-            {totalPicked > 0 && (
+            {totalPicked > 0 && !isEditing && (
               <>
                 <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
                   ↩ Resume your bracket ({progress}% done)
                 </button>
                 <SyncButton name={name} email={email} picks={picks} phase={phase} />
               </>
+            )}
+            {isEditing && (
+              <button 
+                className={styles.linkbtn} 
+                onClick={() => {
+                  setPhase("predict");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                ← Cancel and go back
+              </button>
             )}
           </div>
         </main>
