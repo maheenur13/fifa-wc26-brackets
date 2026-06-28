@@ -112,10 +112,11 @@ export async function GET(request: Request) {
       const normalizedEmail = email.toLowerCase().trim();
       console.log("[API] Searching for email:", normalizedEmail);
 
+      // Use case-insensitive search to match database unique index
       const { data, error } = await supabase
         .from("predictions")
         .select("*")
-        .eq("email", normalizedEmail)
+        .ilike("email", normalizedEmail)
         .single();
 
       if (error) {

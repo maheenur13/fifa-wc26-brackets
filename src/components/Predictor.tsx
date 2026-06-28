@@ -26,6 +26,7 @@ export default function Predictor() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [emailModalInput, setEmailModalInput] = useState("");
   const [nameModalInput, setNameModalInput] = useState("");
   const [emailModalError, setEmailModalError] = useState("");
@@ -130,6 +131,7 @@ export default function Predictor() {
     console.log('=== START CLICKED ===');
     console.log('Email:', email);
     console.log('Name:', name);
+    console.log('Edit mode:', isEditMode);
     console.log('Picks count:', Object.keys(picks).length);
     
     if (!email.trim()) {
@@ -138,6 +140,16 @@ export default function Predictor() {
     }
     
     setCheckingEmail(true);
+    
+    // If in edit mode, just save and return to bracket
+    if (isEditMode) {
+      console.log('✅ Edit mode: Saving changes and returning to bracket');
+      setIsEditMode(false);
+      setCheckingEmail(false);
+      setPhase("predict");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     
     // ALWAYS check database first for cross-device sync
     console.log('🔍 Checking if email exists in database...');
@@ -215,6 +227,7 @@ export default function Predictor() {
     setPhase("intro");
     setAutoSyncing(false);
     setShowLogoutConfirm(false);
+    setIsEditMode(false);
     
     // Clear localStorage
     try {
@@ -313,7 +326,7 @@ export default function Predictor() {
   // ---------------- INTRO ----------------
   if (phase === "intro") {
     // Determine if this is login (no email/name) or edit (has email/name)
-    const isEditing = email.trim() !== '' && name.trim() !== '';
+    const isEditing = isEditMode || (email.trim() !== '' && name.trim() !== '');
     
     return (
       <>
@@ -403,6 +416,7 @@ export default function Predictor() {
                 <button 
                   className={styles.linkbtn} 
                   onClick={() => {
+                    setIsEditMode(false);
                     setPhase("predict");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
@@ -529,7 +543,10 @@ export default function Predictor() {
             <div className={styles.whoami}>
               <span>👤</span>
               <b>{name || "Player"}</b>
-              <button className={styles.linkbtn} onClick={() => setPhase("intro")}>
+              <button className={styles.linkbtn} onClick={() => {
+                setIsEditMode(true);
+                setPhase("intro");
+              }}>
                 edit
               </button>
               <span className={styles.divider}>|</span>
