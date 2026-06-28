@@ -65,33 +65,89 @@ export async function POST(request: Request) {
   try {
     const supabase = getSupabaseAdmin();
 
-    console.log("[API] Upserting prediction:", {
+    console.log("[API] Saving prediction:", {
       client_id: row.client_id,
       email: row.email,
       name: row.name,
       picks_count: row.picks_count,
     });
 
-    const { data, error } = await supabase
+    // The table has TWO unique constraints: client_id and lower(email).
+    // A single upsert can only resolve one of them, so we identify the
+    // canonical row manually — email is the user's identity in this app —
+    // and update it in place, otherwise fall back to the device row, else
+    // insert. This avoids "duplicate key" errors when the same email is
+    // saved from a new device / fresh client_id.
+    // row.email is already trimmed + lowercased, matching how rows are stored,
+    // so an exact match is correct (and avoids ilike treating _/% as wildcards).
+    const { data: byEmail, error: byEmailError } = await supabase
       .from("predictions")
-      .upsert(row, { onConflict: "client_id" })
-      .select("updated_at")
-      .single();
+      .select("id")
+      .eq("email", row.email)
+      .maybeSingle();
 
-    if (error) {
-      console.error("[API] Supabase upsert failed:", {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-      });
+    if (byEmailError) {
+      console.error("[API] Lookup by email failed:", byEmailError);
       return NextResponse.json(
-        { ok: false, error: `Database error: ${error.message}` },
+        { ok: false, error: `Database error: ${byEmailError.message}` },
         { status: 500 },
       );
     }
 
-    console.log("[API] Successfully upserted prediction");
+    let data: { updated_at: string } | null = null;
+    let error: { message: string } | null = null;
+
+    if (byEmail) {
+      // Canonical email row exists → update it. Keep its original client_id
+      // so we never collide with the client_id unique constraint.
+      ({ data, error } = await supabase
+        .from("predictions")
+        .update({
+          name: row.name,
+          email: row.email,
+          picks: row.picks,
+          phase: row.phase,
+          champion: row.champion,
+          picks_count: row.picks_count,
+          updated_at: row.updated_at,
+        })
+        .eq("id", byEmail.id)
+        .select("updated_at")
+        .single());
+    } else {
+      // No row for this email. This device may have a row under a previous
+      // email (same client_id) — reuse it; otherwise insert a fresh row.
+      const { data: byClient } = await supabase
+        .from("predictions")
+        .select("id")
+        .eq("client_id", row.client_id)
+        .maybeSingle();
+
+      if (byClient) {
+        ({ data, error } = await supabase
+          .from("predictions")
+          .update(row)
+          .eq("id", byClient.id)
+          .select("updated_at")
+          .single());
+      } else {
+        ({ data, error } = await supabase
+          .from("predictions")
+          .insert(row)
+          .select("updated_at")
+          .single());
+      }
+    }
+
+    if (error || !data) {
+      console.error("[API] Supabase save failed:", error);
+      return NextResponse.json(
+        { ok: false, error: `Database error: ${error?.message ?? "unknown"}` },
+        { status: 500 },
+      );
+    }
+
+    console.log("[API] Successfully saved prediction");
 
     return NextResponse.json({
       ok: true,
