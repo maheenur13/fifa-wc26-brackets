@@ -122,6 +122,9 @@ export default function Predictor() {
     if (!email.trim()) return;
     // If no name yet, show name modal first
     if (!name.trim()) {
+      // Pre-fill name input with email username for convenience
+      const emailUser = email.split('@')[0];
+      setNameModalInput(emailUser);
       setShowNameModal(true);
       return;
     }
@@ -223,65 +226,100 @@ export default function Predictor() {
   // ---------------- INTRO ----------------
   if (phase === "intro") {
     return (
-      <main className={styles.shell}>
-        <div className={`${styles.intro} ${styles.fadeIn}`}>
-          <span className={styles.introTag}>FIFA World Cup 2026 · Knockout</span>
-          <h1 className={styles.introTitle}>
-            PREDICT
-            <br />
-            THE BRACKET
-          </h1>
-          <p className={styles.introSub}>
-            The Round of 32 is locked in. Call every knockout game from the last
-            32 all the way to the Final — then crown your champion and share it.
-          </p>
-          <div className={styles.nameRow}>
-            <input
-              className={styles.input}
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              maxLength={60}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
-              autoComplete="email"
-            />
-            <button
-              className={styles.btn}
-              onClick={start}
-              disabled={!email.trim()}
-            >
-              Start →
-            </button>
-          </div>
-          <div className={styles.statStrip}>
-            <div className={styles.stat}>
-              <span className={styles.statNum}>32</span>
-              <span className={styles.statLabel}>Teams</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statNum}>31</span>
-              <span className={styles.statLabel}>Games</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statNum}>5</span>
-              <span className={styles.statLabel}>Rounds</span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statNum}>1</span>
-              <span className={styles.statLabel}>Champion</span>
-            </div>
-          </div>
-          {totalPicked > 0 && (
-            <>
-              <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
-                ↩ Resume your bracket ({progress}% done)
+      <>
+        <main className={styles.shell}>
+          <div className={`${styles.intro} ${styles.fadeIn}`}>
+            <span className={styles.introTag}>FIFA World Cup 2026 · Knockout</span>
+            <h1 className={styles.introTitle}>
+              PREDICT
+              <br />
+              THE BRACKET
+            </h1>
+            <p className={styles.introSub}>
+              The Round of 32 is locked in. Call every knockout game from the last
+              32 all the way to the Final — then crown your champion and share it.
+            </p>
+            <div className={styles.nameRow}>
+              <input
+                className={styles.input}
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                maxLength={60}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
+                autoComplete="email"
+              />
+              <button
+                className={styles.btn}
+                onClick={start}
+                disabled={!email.trim()}
+              >
+                Start →
               </button>
-              <SyncButton name={name} email={email} picks={picks} phase={phase} />
-            </>
-          )}
-        </div>
-      </main>
+            </div>
+            <div className={styles.statStrip}>
+              <div className={styles.stat}>
+                <span className={styles.statNum}>32</span>
+                <span className={styles.statLabel}>Teams</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statNum}>31</span>
+                <span className={styles.statLabel}>Games</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statNum}>5</span>
+                <span className={styles.statLabel}>Rounds</span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statNum}>1</span>
+                <span className={styles.statLabel}>Champion</span>
+              </div>
+            </div>
+            {totalPicked > 0 && (
+              <>
+                <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
+                  ↩ Resume your bracket ({progress}% done)
+                </button>
+                <SyncButton name={name} email={email} picks={picks} phase={phase} />
+              </>
+            )}
+          </div>
+        </main>
+
+        {/* Name Modal */}
+        {showNameModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+              <h2 className={styles.modalTitle}>👤 What&apos;s Your Name?</h2>
+              <p className={styles.modalText}>
+                Your name will be displayed on your bracket and used to identify your predictions.
+              </p>
+              <div className={styles.modalForm}>
+                <input
+                  className={styles.input}
+                  type="text"
+                  placeholder="Enter your name"
+                  value={nameModalInput}
+                  maxLength={28}
+                  onChange={(e) => setNameModalInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleNameModalSubmit()}
+                  autoFocus
+                />
+                <button
+                  className={styles.btn}
+                  onClick={handleNameModalSubmit}
+                >
+                  Start Predicting →
+                </button>
+                {nameModalError && (
+                  <p className={styles.modalError}>{nameModalError}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
