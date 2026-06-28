@@ -2,7 +2,7 @@ import type { Picks } from "@/lib/bracket";
 import { getOrCreateClientId, type Phase } from "@/lib/storage";
 
 export type SyncResult =
-  | { ok: true; updatedAt: string }
+  | { ok: true; id?: string; updatedAt: string }
   | { ok: false; error: string };
 
 export async function syncPrediction(input: {
@@ -43,6 +43,7 @@ export async function syncPrediction(input: {
 
     const data = (await res.json()) as {
       ok?: boolean;
+      id?: string;
       updatedAt?: string;
       error?: string;
     };
@@ -51,7 +52,11 @@ export async function syncPrediction(input: {
       return { ok: false, error: data.error ?? "Sync failed." };
     }
 
-    return { ok: true, updatedAt: data.updatedAt ?? new Date().toISOString() };
+    return {
+      ok: true,
+      id: data.id,
+      updatedAt: data.updatedAt ?? new Date().toISOString(),
+    };
   } catch {
     return { ok: false, error: "Network error — try again." };
   }

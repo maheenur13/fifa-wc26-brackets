@@ -22,6 +22,8 @@ type Props = {
   onPick: (matchId: number, teamId: string) => void;
   champ?: string;
   onCrown: () => void;
+  /** Static, full-size render for screenshot export (no scroll/zoom/toolbar). */
+  capture?: boolean;
 };
 
 /** Walk a sub-tree from a root match into per-round levels (root → leaves). */
@@ -173,13 +175,19 @@ function CompactMatch({
   );
 }
 
-export default function BracketTree({ picks, onPick, champ, onCrown }: Props) {
+export default function BracketTree({
+  picks,
+  onPick,
+  champ,
+  onCrown,
+  capture = false,
+}: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [paths, setPaths] = useState<string[]>([]);
   const [size, setSize] = useState({ w: 0, h: 940 });
   const [scale, setScale] = useState(1);
-  const [autoFit, setAutoFit] = useState(true);
+  const [autoFit, setAutoFit] = useState(!capture);
 
   const leftLevels = levelsFrom(101); // [SF],[QF],[R16],[R32]
   const rightLevels = levelsFrom(102);
@@ -302,30 +310,36 @@ export default function BracketTree({ picks, onPick, champ, onCrown }: Props) {
 
   return (
     <div className={styles.bracketWrap}>
-      <div className={styles.bracketBar}>
-        <span className={styles.bracketHint}>
-          Tap a team to advance it. <b>Pinch / drag</b> to explore the bracket.
-        </span>
-        <div className={styles.zoomBtns}>
-          <button
-            className={`${styles.zoomBtn} ${styles.zoomFit}`}
-            onClick={() => setAutoFit(true)}
-          >
-            Fit
-          </button>
-          <button className={styles.zoomBtn} onClick={() => zoom(-0.15)} aria-label="Zoom out">
-            −
-          </button>
-          <button className={styles.zoomBtn} onClick={() => zoom(0.15)} aria-label="Zoom in">
-            +
-          </button>
+      {!capture && (
+        <div className={styles.bracketBar}>
+          <span className={styles.bracketHint}>
+            Tap a team to advance it. <b>Pinch / drag</b> to explore the bracket.
+          </span>
+          <div className={styles.zoomBtns}>
+            <button
+              className={`${styles.zoomBtn} ${styles.zoomFit}`}
+              onClick={() => setAutoFit(true)}
+            >
+              Fit
+            </button>
+            <button className={styles.zoomBtn} onClick={() => zoom(-0.15)} aria-label="Zoom out">
+              −
+            </button>
+            <button className={styles.zoomBtn} onClick={() => zoom(0.15)} aria-label="Zoom in">
+              +
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div
         className={styles.viewport}
         ref={viewportRef}
-        style={{ height: `min(78vh, ${Math.max(280, size.h * scale + 8)}px)` }}
+        style={
+          capture
+            ? { height: "auto", overflow: "visible", cursor: "default" }
+            : { height: `min(78vh, ${Math.max(280, size.h * scale + 8)}px)` }
+        }
       >
         <div
           className={styles.sizer}

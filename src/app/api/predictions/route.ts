@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       );
     }
 
-    let data: { updated_at: string } | null = null;
+    let data: { id: string; updated_at: string } | null = null;
     let error: { message: string } | null = null;
 
     if (byEmail) {
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
           updated_at: row.updated_at,
         })
         .eq("id", byEmail.id)
-        .select("updated_at")
+        .select("id, updated_at")
         .single());
     } else {
       // No row for this email. This device may have a row under a previous
@@ -128,13 +128,13 @@ export async function POST(request: Request) {
           .from("predictions")
           .update(row)
           .eq("id", byClient.id)
-          .select("updated_at")
+          .select("id, updated_at")
           .single());
       } else {
         ({ data, error } = await supabase
           .from("predictions")
           .insert(row)
-          .select("updated_at")
+          .select("id, updated_at")
           .single());
       }
     }
@@ -151,6 +151,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
+      id: data.id as string,
       updatedAt: data.updated_at as string,
     });
   } catch (err) {

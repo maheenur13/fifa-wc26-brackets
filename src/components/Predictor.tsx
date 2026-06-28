@@ -295,8 +295,8 @@ export default function Predictor() {
         .then((result) => {
           if (result.ok) {
             console.log('✅ Synced, redirecting to share page');
-            // Navigate to share URL
-            const shareUrl = `/share/${clientId}`;
+            // Prefer the stable DB row id; fall back to clientId for safety.
+            const shareUrl = `/share/${result.id ?? clientId}`;
             router.push(shareUrl);
           } else {
             console.error('Sync failed:', result.error);
@@ -393,11 +393,11 @@ export default function Predictor() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function download() {
+  async function download(mode: "card" | "bracket" = screenshotMode) {
     setShareError(false);
-    
+
     // For bracket mode, show it temporarily while capturing
-    if (screenshotMode === "bracket") {
+    if (mode === "bracket") {
       setShowBracketCapture(true);
       setDownloading(true);
       
@@ -424,11 +424,10 @@ export default function Predictor() {
         console.log('Capturing branded bracket:', { actualWidth, actualHeight });
         
         const render = toPng(node, {
-          pixelRatio: 3,
+          pixelRatio: 2,
           backgroundColor: "#0a1230",
           width: actualWidth,
           height: actualHeight,
-          cacheBust: true,
         });
         
         const dataUrl = await Promise.race([
@@ -625,15 +624,13 @@ export default function Predictor() {
           
           {/* Hidden bracket share view for screenshots */}
           {showBracketCapture && (
-            <div style={{ 
-              position: 'fixed', 
-              inset: 0,
-              zIndex: 10000,
-              background: '#0a1230',
-              overflow: 'auto',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'center'
+            <div style={{
+              position: 'fixed',
+              left: '-100000px',
+              top: 0,
+              zIndex: -1,
+              opacity: 0,
+              pointerEvents: 'none',
             }}>
               <BracketShareView
                 ref={bracketShareRef}
@@ -651,8 +648,8 @@ export default function Predictor() {
               className={styles.btn} 
               onClick={() => {
                 setScreenshotMode("card");
-                download();
-              }} 
+                download("card");
+              }}
               disabled={downloading}
             >
               {downloading && screenshotMode === "card" ? "Rendering…" : "📸 Save Card"}
@@ -661,8 +658,8 @@ export default function Predictor() {
               className={styles.btn} 
               onClick={() => {
                 setScreenshotMode("bracket");
-                download();
-              }} 
+                download("bracket");
+              }}
               disabled={downloading}
             >
               {downloading && screenshotMode === "bracket" ? "Rendering…" : "🗂️ Save Bracket"}

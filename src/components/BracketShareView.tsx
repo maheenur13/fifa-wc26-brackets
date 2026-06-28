@@ -25,12 +25,13 @@ const BracketShareView = forwardRef<HTMLDivElement, Props>(
           </div>
         </div>
 
-        {/* The actual bracket */}
+        {/* The actual bracket — static full-size render for capture */}
         <BracketTree
           picks={picks}
           onPick={onPick}
           champ={champ}
           onCrown={onCrown}
+          capture
         />
 
         {/* Footer with user name */}

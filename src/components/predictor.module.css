@@ -1382,11 +1382,12 @@
 
 /* Bracket Share View Styles */
 .bracketShareWrapper {
-  background: linear-gradient(165deg, #0a1230 0%, #0d1838 55%, #0c1f33 100%);
-  padding: 30px 20px;
-  min-height: 100vh;
+  background:
+    radial-gradient(70% 40% at 12% 0%, rgba(255, 33, 81, 0.12), transparent 55%),
+    radial-gradient(70% 40% at 90% 0%, rgba(42, 123, 255, 0.12), transparent 55%),
+    linear-gradient(165deg, #0a1230 0%, #0d1838 55%, #0c1f33 100%);
+  padding: 32px 28px;
   width: max-content;
-  min-width: 100%;
 }
 
 .bracketShareHeader {

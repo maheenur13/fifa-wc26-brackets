@@ -22,11 +22,20 @@ export default async function SharePage({ params }: Props) {
 
   try {
     const supabase = getSupabaseAdmin();
+
+    // Links use the stable primary key `id`; older links used `client_id`.
+    // Resolve by either. The `id.eq` term is only valid for uuid-shaped values.
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const filter = isUuid
+      ? `id.eq.${id},client_id.eq.${id}`
+      : `client_id.eq.${id}`;
+
     const { data, error } = await supabase
       .from("predictions")
       .select("*")
-      .eq("client_id", id)
-      .single();
+      .or(filter)
+      .maybeSingle();
 
     console.log('[SharePage] Query result:', { data: !!data, error: error?.message });
 
