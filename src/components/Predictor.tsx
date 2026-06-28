@@ -560,19 +560,18 @@ export default function Predictor() {
                 ☁ Syncing...
               </span>
             )}
-            {!autoSyncing && (
-              <button 
-                className={styles.refreshBtn}
-                onClick={() => void handleRefreshFromCloud()}
-                disabled={refreshing}
-                title="Refresh from cloud"
-              >
-                {refreshing ? "↻" : "🔄"}
-              </button>
-            )}
             <div className={styles.whoami}>
-              <span>👤</span>
               <b>{name || "Player"}</b>
+              {!autoSyncing && (
+                <button 
+                  className={styles.refreshBtn}
+                  onClick={() => void handleRefreshFromCloud()}
+                  disabled={refreshing}
+                  title="Refresh from cloud"
+                >
+                  {refreshing ? "↻" : "🔄"}
+                </button>
+              )}
               <button className={styles.linkbtn} onClick={() => router.push("/edit")}>
                 edit
               </button>
