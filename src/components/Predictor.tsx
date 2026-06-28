@@ -110,6 +110,11 @@ export default function Predictor() {
     };
   }, [hydrated, phase, name, email, picks]);
 
+  // Debug: log modal state
+  useEffect(() => {
+    console.log('showNameModal changed to:', showNameModal);
+  }, [showNameModal]);
+
   const totalPicked = Object.values(picks).filter(Boolean).length;
   const progress = Math.round((totalPicked / 31) * 100);
   const champ = champion(picks);
@@ -119,15 +124,18 @@ export default function Predictor() {
   }
 
   function start() {
+    console.log('Start clicked, email:', email, 'name:', name);
     if (!email.trim()) return;
     // If no name yet, show name modal first
     if (!name.trim()) {
       // Pre-fill name input with email username for convenience
       const emailUser = email.split('@')[0];
+      console.log('Showing name modal, prefilling with:', emailUser);
       setNameModalInput(emailUser);
       setShowNameModal(true);
       return;
     }
+    console.log('Going to predict phase');
     setPhase("predict");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -289,8 +297,11 @@ export default function Predictor() {
 
         {/* Name Modal */}
         {showNameModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
+          <div className={styles.modalOverlay} onClick={(e) => {
+            console.log('Modal overlay clicked');
+            e.stopPropagation();
+          }}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
               <h2 className={styles.modalTitle}>👤 What&apos;s Your Name?</h2>
               <p className={styles.modalText}>
                 Your name will be displayed on your bracket and used to identify your predictions.
