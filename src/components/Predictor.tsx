@@ -126,14 +126,21 @@ export default function Predictor() {
   }
 
   async function start() {
-    console.log('Start clicked, email:', email, 'name:', name);
-    if (!email.trim()) return;
+    console.log('=== START CLICKED ===');
+    console.log('Email:', email);
+    console.log('Name:', name);
+    console.log('Picks count:', Object.keys(picks).length);
+    
+    if (!email.trim()) {
+      console.log('❌ No email provided');
+      return;
+    }
     
     setCheckingEmail(true);
     
     // If both email and name are provided (editing case), go straight to predict
     if (name.trim()) {
-      console.log('Both email and name provided, going to predict phase');
+      console.log('✅ Both email and name provided, going to predict phase');
       setCheckingEmail(false);
       setPhase("predict");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -141,29 +148,46 @@ export default function Predictor() {
     }
     
     // Check if email already exists in database (cross-device sync)
+    console.log('🔍 Checking if email exists in database...');
+    console.log('API URL:', `/api/predictions?email=${encodeURIComponent(email.trim())}`);
+    
     try {
       const res = await fetch(`/api/predictions?email=${encodeURIComponent(email.trim())}`);
+      console.log('API Response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
+        console.log('API Response data:', data);
+        
         if (data.ok && data.prediction) {
           // Found existing prediction! Load it
-          console.log('✅ Found existing prediction for email:', data.prediction);
+          console.log('✅ Found existing prediction!');
+          console.log('- Name:', data.prediction.name);
+          console.log('- Email:', data.prediction.email);
+          console.log('- Picks count:', data.prediction.picks_count);
+          console.log('- Phase:', data.prediction.phase);
+          
           setName(data.prediction.name);
           setPicks(data.prediction.picks);
           setPhase(data.prediction.phase === 'result' ? 'result' : 'predict');
           setCheckingEmail(false);
           window.scrollTo({ top: 0, behavior: "smooth" });
           return;
+        } else {
+          console.log('📝 No existing prediction found for this email');
         }
+      } else {
+        console.log('❌ API request failed with status:', res.status);
+        const errorData = await res.text();
+        console.log('Error response:', errorData);
       }
     } catch (err) {
-      console.log('Error checking email:', err);
-      // Continue to name modal if fetch fails
+      console.error('❌ Error checking email:', err);
     }
     
     // No existing prediction found, ask for name via modal
     const emailUser = email.split('@')[0];
-    console.log('📝 No existing data, showing name modal, prefilling with:', emailUser);
+    console.log('📝 Showing name modal, prefilling with:', emailUser);
     setNameModalInput(emailUser);
     setCheckingEmail(false);
     setShowNameModal(true);
