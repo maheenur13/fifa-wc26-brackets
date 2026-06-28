@@ -44,10 +44,6 @@ export default function Predictor() {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const saved = JSON.parse(raw);
-          if (saved.name) setName(saved.name);
-          if (saved.email) setEmail(saved.email);
-          if (saved.picks) setPicks(saved.picks);
-          if (saved.phase) setPhase(saved.phase);
           
           // Check if existing user needs to add email
           if (!saved.email && saved.phase !== "intro") {
@@ -62,29 +58,45 @@ export default function Predictor() {
               if (res.ok) {
                 const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
                 if (data.ok && data.prediction) {
-                  console.log('✅ Found cloud data, refreshing...');
-                  // Update with latest cloud data
-                  if (data.prediction.name !== saved.name) {
-                    console.log(`📝 Name updated: "${saved.name}" → "${data.prediction.name}"`);
-                    setName(data.prediction.name);
-                    saved.name = data.prediction.name;
-                  }
-                  if (JSON.stringify(data.prediction.picks) !== JSON.stringify(saved.picks)) {
-                    console.log('📝 Picks updated from cloud');
-                    setPicks(data.prediction.picks);
-                    saved.picks = data.prediction.picks;
-                  }
-                  // Save updated data to localStorage
-                  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                  console.log('✅ Found cloud data, using it as source of truth');
+                  console.log('Cloud name:', data.prediction.name);
+                  console.log('Local name:', saved.name);
+                  
+                  // Use cloud data as source of truth
+                  const cloudData = {
+                    name: data.prediction.name,
+                    email: data.prediction.email,
+                    picks: data.prediction.picks,
+                    phase: data.prediction.phase
+                  };
+                  
+                  // Update state with cloud data
+                  setName(cloudData.name);
+                  setEmail(cloudData.email);
+                  setPicks(cloudData.picks);
+                  setPhase(cloudData.phase === 'result' ? 'result' : 'predict');
+                  
+                  // Save cloud data to localStorage
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
+                  console.log('✅ Cloud data synced to state and localStorage');
+                  setHydrated(true);
+                  return;
                 }
               }
             } catch (err) {
               console.log('⚠️ Could not refresh from cloud:', err);
             }
           }
+          
+          // No cloud data or not logged in - use localStorage
+          console.log('Using localStorage data');
+          if (saved.name) setName(saved.name);
+          if (saved.email) setEmail(saved.email);
+          if (saved.picks) setPicks(saved.picks);
+          if (saved.phase) setPhase(saved.phase);
         }
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error('Error loading data:', err);
       }
       setHydrated(true);
     }

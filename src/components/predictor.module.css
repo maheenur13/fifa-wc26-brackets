@@ -1179,55 +1179,60 @@
   .topbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
   }
   .headRight {
     width: 100%;
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
   }
   .whoami {
-    width: 100%;
-    flex-direction: column;
-    padding: 14px 18px;
-    gap: 12px;
-    border-radius: 16px;
-    white-space: normal;
-    align-items: stretch;
+    flex: 1;
+    flex-direction: row;
+    padding: 8px 12px;
+    gap: 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
   }
   .whoami b {
-    max-width: 100%;
-    font-size: 15px;
-    text-align: center;
-    order: -2;
+    flex: 1;
+    font-size: 13px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
   .divider {
-    display: none;
+    display: inline;
+    margin: 0 4px;
   }
   .whoami > span:first-child {
-    font-size: 24px;
-    text-align: center;
-    order: -3;
+    font-size: 18px;
+    flex-shrink: 0;
   }
   .whoami .linkbtn {
-    width: 100%;
-    padding: 12px 16px;
-    min-height: 48px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.04);
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 10px;
-    transition: all 0.2s;
+    width: auto;
+    padding: 4px 8px;
+    min-height: 28px;
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
   }
   .whoami .linkbtn:hover {
     background: rgba(255, 33, 81, 0.12);
-    border-color: var(--border-glow);
+    border-radius: 6px;
   }
   .whoami .linkbtn:active {
     background: rgba(255, 255, 255, 0.08);
-    transform: scale(0.98);
+    transform: none;
   }
   .progressMini {
     min-width: 100%;
@@ -1239,9 +1244,10 @@
     text-align: center;
   }
   .refreshBtn {
-    width: 100%;
-    min-height: 44px;
-    font-size: 18px;
+    flex-shrink: 0;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 16px;
   }
 }
 
