@@ -7,6 +7,7 @@ export type SyncResult =
 
 export async function syncPrediction(input: {
   name: string;
+  email: string;
   picks: Picks;
   phase: Phase;
 }): Promise<SyncResult> {
@@ -17,6 +18,15 @@ export async function syncPrediction(input: {
   if (!input.name.trim()) {
     return { ok: false, error: "Enter your name before syncing." };
   }
+  if (!input.email.trim()) {
+    return { ok: false, error: "Enter your email before syncing." };
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(input.email.trim())) {
+    return { ok: false, error: "Enter a valid email address." };
+  }
 
   try {
     const res = await fetch("/api/predictions", {
@@ -25,6 +35,7 @@ export async function syncPrediction(input: {
       body: JSON.stringify({
         clientId,
         name: input.name.trim(),
+        email: input.email.trim(),
         picks: input.picks,
         phase: input.phase,
       }),

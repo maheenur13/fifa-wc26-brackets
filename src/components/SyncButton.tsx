@@ -8,24 +8,25 @@ import styles from "./predictor.module.css";
 
 type Props = {
   name: string;
+  email: string;
   picks: Picks;
   phase: Phase;
   compact?: boolean;
 };
 
-export default function SyncButton({ name, picks, phase, compact }: Props) {
+export default function SyncButton({ name, email, picks, phase, compact }: Props) {
   const [status, setStatus] = useState<"idle" | "syncing" | "done" | "error">(
     "idle"
   );
   const [message, setMessage] = useState("");
 
   const picked = Object.values(picks).filter(Boolean).length;
-  if (!name.trim() || picked === 0) return null;
+  if (!name.trim() || !email.trim() || picked === 0) return null;
 
   async function handleSync() {
     setStatus("syncing");
     setMessage("");
-    const result = await syncPrediction({ name, picks, phase });
+    const result = await syncPrediction({ name, email, picks, phase });
     if (result.ok) {
       setStatus("done");
       setMessage(

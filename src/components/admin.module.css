@@ -235,6 +235,12 @@
   white-space: nowrap;
 }
 
+.email {
+  color: var(--ink-dim);
+  font-size: 13px;
+  font-family: monospace;
+}
+
 .phase {
   text-transform: capitalize;
 }

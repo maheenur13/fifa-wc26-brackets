@@ -8,6 +8,7 @@ import type { Picks } from "@/lib/bracket";
 type PostBody = {
   clientId?: string;
   name?: string;
+  email?: string;
   picks?: Picks;
   phase?: Phase;
 };
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json(
       { ok: false, error: "Database is not configured." },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -26,30 +27,40 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid JSON body." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const clientId = body.clientId?.trim();
   const name = body.name?.trim();
+  const email = body.email?.trim();
   const picks = body.picks ?? {};
   const phase = body.phase;
 
-  if (!clientId || !name) {
+  if (!clientId || !name || !email) {
     return NextResponse.json(
-      { ok: false, error: "clientId and name are required." },
-      { status: 400 }
+      { ok: false, error: "clientId, name, and email are required." },
+      { status: 400 },
+    );
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json(
+      { ok: false, error: "Invalid email address." },
+      { status: 400 },
     );
   }
 
   if (!phase || !["intro", "predict", "result"].includes(phase)) {
     return NextResponse.json(
       { ok: false, error: "Invalid phase." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const row = toPredictionInsert({ clientId, name, picks, phase });
+  const row = toPredictionInsert({ clientId, name, email, picks, phase });
 
   try {
     const supabase = getSupabaseAdmin();
@@ -63,7 +74,7 @@ export async function POST(request: Request) {
       console.error("Supabase upsert failed", error);
       return NextResponse.json(
         { ok: false, error: "Could not save prediction." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -75,20 +86,23 @@ export async function POST(request: Request) {
     console.error("Prediction sync error", err);
     return NextResponse.json(
       { ok: false, error: "Server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized." },
+      { status: 401 },
+    );
   }
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json(
       { ok: false, error: "Database is not configured." },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -99,7 +113,7 @@ export async function GET() {
     console.error("Prediction list error", err);
     return NextResponse.json(
       { ok: false, error: "Server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

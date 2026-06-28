@@ -181,6 +181,7 @@ export default function AdminDashboard({
           <thead>
             <tr>
               <th>Name</th>
+              <th>Email</th>
               <th>Champion</th>
               <th>Progress</th>
               <th>Phase</th>
@@ -191,7 +192,7 @@ export default function AdminDashboard({
           <tbody>
             {predictions.length === 0 && !loading ? (
               <tr>
-                <td colSpan={6} className={styles.empty}>
+                <td colSpan={7} className={styles.empty}>
                   No predictions synced yet. Users can tap &quot;Sync to cloud&quot; in the app.
                 </td>
               </tr>
@@ -205,6 +206,7 @@ export default function AdminDashboard({
                     <td>
                       <b>{row.name}</b>
                     </td>
+                    <td className={styles.email}>{row.email}</td>
                     <td>
                       {team ? (
                         <span className={styles.champCell}>
@@ -231,7 +233,7 @@ export default function AdminDashboard({
                   </tr>
                   {open ? (
                     <tr key={`${row.id}-detail`} className={styles.detailRow}>
-                      <td colSpan={6}>
+                      <td colSpan={7}>
                         <pre className={styles.picksJson}>
                           {JSON.stringify(row.picks, null, 2)}
                         </pre>

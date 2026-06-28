@@ -7,6 +7,7 @@ export const CLIENT_ID_KEY = "wc26-client-id";
 
 export type SavedPrediction = {
   name: string;
+  email: string;
   picks: Picks;
   phase: Phase;
 };
@@ -19,6 +20,7 @@ export function loadSavedPrediction(): SavedPrediction | null {
     const saved = JSON.parse(raw) as Partial<SavedPrediction>;
     return {
       name: saved.name ?? "",
+      email: saved.email ?? "",
       picks: saved.picks ?? {},
       phase: saved.phase ?? "intro",
     };

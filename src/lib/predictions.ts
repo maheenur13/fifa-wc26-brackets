@@ -6,6 +6,7 @@ export type PredictionRow = {
   id: string;
   client_id: string;
   name: string;
+  email: string;
   picks: Picks;
   phase: Phase;
   champion: string | null;
@@ -17,6 +18,7 @@ export type PredictionRow = {
 export type PredictionPayload = {
   clientId: string;
   name: string;
+  email: string;
   picks: Picks;
   phase: Phase;
 };
@@ -30,6 +32,7 @@ export function toPredictionInsert(payload: PredictionPayload) {
   return {
     client_id: payload.clientId,
     name: payload.name.trim(),
+    email: payload.email.trim().toLowerCase(),
     picks: payload.picks,
     phase: payload.phase,
     champion: champ,

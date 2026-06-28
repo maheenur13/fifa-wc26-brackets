@@ -16,10 +16,15 @@ import styles from "./predictor.module.css";
 export default function Predictor() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [picks, setPicks] = useState<Picks>({});
   const [downloading, setDownloading] = useState(false);
   const [shareError, setShareError] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [autoSyncing, setAutoSyncing] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailModalInput, setEmailModalInput] = useState("");
+  const [emailModalError, setEmailModalError] = useState("");
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
@@ -31,8 +36,14 @@ export default function Predictor() {
       if (raw) {
         const saved = JSON.parse(raw);
         if (saved.name) setName(saved.name);
+        if (saved.email) setEmail(saved.email);
         if (saved.picks) setPicks(saved.picks);
         if (saved.phase) setPhase(saved.phase);
+        
+        // Check if existing user needs to add email
+        if (saved.name && !saved.email && saved.phase !== "intro") {
+          setShowEmailModal(true);
+        }
       }
     } catch {
       /* ignore */
@@ -45,11 +56,11 @@ export default function Predictor() {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, picks, phase }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, email, picks, phase }));
     } catch {
       /* ignore */
     }
-  }, [name, picks, phase, hydrated]);
+  }, [name, email, picks, phase, hydrated]);
 
   // Auto-sync when a user crowns their champion (once per visit to result).
   const prevPhaseRef = useRef<Phase>("intro");
@@ -58,10 +69,43 @@ export default function Predictor() {
     const justFinished =
       prevPhaseRef.current !== "result" && phase === "result";
     prevPhaseRef.current = phase;
-    if (justFinished && champion(picks) && name.trim()) {
-      void syncPrediction({ name, picks, phase });
+    if (justFinished && champion(picks) && name.trim() && email.trim()) {
+      void syncPrediction({ name, email, picks, phase });
     }
-  }, [hydrated, phase, name, picks]);
+  }, [hydrated, phase, name, email, picks]);
+
+  // Auto-sync on every pick change (debounced)
+  const autoSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (!hydrated || phase !== "predict") return;
+    if (!name.trim() || !email.trim()) return;
+    
+    const pickedCount = Object.values(picks).filter(Boolean).length;
+    if (pickedCount === 0) return;
+
+    // Clear previous timeout
+    if (autoSyncTimeoutRef.current) {
+      clearTimeout(autoSyncTimeoutRef.current);
+    }
+
+    // Debounce auto-sync by 2 seconds
+    autoSyncTimeoutRef.current = setTimeout(() => {
+      setAutoSyncing(true);
+      syncPrediction({ name, email, picks, phase })
+        .then(() => {
+          setAutoSyncing(false);
+        })
+        .catch(() => {
+          setAutoSyncing(false);
+        });
+    }, 2000);
+
+    return () => {
+      if (autoSyncTimeoutRef.current) {
+        clearTimeout(autoSyncTimeoutRef.current);
+      }
+    };
+  }, [hydrated, phase, name, email, picks]);
 
   const totalPicked = Object.values(picks).filter(Boolean).length;
   const progress = Math.round((totalPicked / 31) * 100);
@@ -72,6 +116,7 @@ export default function Predictor() {
   }
 
   function start() {
+    if (!name.trim() || !email.trim()) return;
     setPhase("predict");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -84,6 +129,27 @@ export default function Predictor() {
     } catch {
       /* ignore */
     }
+  }
+
+  function handleEmailModalSubmit() {
+    setEmailModalError("");
+    const trimmedEmail = emailModalInput.trim();
+    
+    if (!trimmedEmail) {
+      setEmailModalError("Email is required to continue.");
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setEmailModalError("Please enter a valid email address.");
+      return;
+    }
+    
+    setEmail(trimmedEmail);
+    setShowEmailModal(false);
+    setEmailModalInput("");
   }
 
   async function download() {
@@ -147,12 +213,21 @@ export default function Predictor() {
               value={name}
               maxLength={28}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && name.trim() && start()}
+              onKeyDown={(e) => e.key === "Enter" && name.trim() && email.trim() && start()}
+            />
+            <input
+              className={styles.input}
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              maxLength={60}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && name.trim() && email.trim() && start()}
             />
             <button
               className={styles.btn}
               onClick={start}
-              disabled={!name.trim()}
+              disabled={!name.trim() || !email.trim()}
             >
               Start →
             </button>
@@ -180,7 +255,7 @@ export default function Predictor() {
               <button className={styles.linkbtn} onClick={() => setPhase("predict")}>
                 ↩ Resume your bracket ({progress}% done)
               </button>
-              <SyncButton name={name} picks={picks} phase={phase} />
+              <SyncButton name={name} email={email} picks={picks} phase={phase} />
             </>
           )}
         </div>
@@ -206,7 +281,7 @@ export default function Predictor() {
       <main className={styles.shell}>
         <div className={`${styles.result} ${styles.pop}`}>
           <ShareCard ref={shareRef} name={name} picks={picks} champ={champ} />
-          <SyncButton name={name} picks={picks} phase={phase} />
+          <SyncButton name={name} email={email} picks={picks} phase={phase} />
           <div className={styles.resultActions}>
             <button className={styles.btn} onClick={download} disabled={downloading}>
               {downloading ? "Rendering…" : "📸 Save image"}
@@ -233,60 +308,100 @@ export default function Predictor() {
 
   // ---------------- PREDICT ----------------
   return (
-    <main className={styles.shellWide}>
-      <header className={styles.topbar}>
-        <div className={styles.brand}>
-          <span className={styles.kicker}>WC26 · Knockout Predictor</span>
-          <span className={styles.logo}>ROAD TO THE FINAL</span>
-        </div>
-        <div className={styles.headRight}>
-          <div className={styles.progressMini}>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${progress}%` }}
-              />
+    <>
+      <main className={styles.shellWide}>
+        <header className={styles.topbar}>
+          <div className={styles.brand}>
+            <span className={styles.kicker}>WC26 · Knockout Predictor</span>
+            <span className={styles.logo}>ROAD TO THE FINAL</span>
+          </div>
+          <div className={styles.headRight}>
+            <div className={styles.progressMini}>
+              <div className={styles.progressTrack}>
+                <div
+                  className={styles.progressFill}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <span className={styles.progressTxt}>{totalPicked}/31</span>
             </div>
-            <span className={styles.progressTxt}>{totalPicked}/31</span>
+            {autoSyncing && (
+              <span className={styles.autoSyncIndicator}>
+                ☁ Syncing...
+              </span>
+            )}
+            <div className={styles.whoami}>
+              <span>👤</span>
+              <b>{name || "Player"}</b>
+              <button className={styles.linkbtn} onClick={() => setPhase("intro")}>
+                edit
+              </button>
+            </div>
           </div>
-          <div className={styles.whoami}>
-            <span>👤</span>
-            <b>{name || "Player"}</b>
-            <button className={styles.linkbtn} onClick={() => setPhase("intro")}>
-              edit
+        </header>
+
+        <BracketTree
+          picks={picks}
+          onPick={handlePick}
+          champ={champ}
+          onCrown={() => {
+            setPhase("result");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+
+        <div className={styles.predictFoot}>
+          {champ ? (
+            <button
+              className={styles.btn}
+              onClick={() => {
+                setPhase("result");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              👑 Crown champion & share
             </button>
+          ) : (
+            <span className={styles.hint}>
+              Pick a winner in every match — the bracket fills in as you go.
+            </span>
+          )}
+          <SyncButton name={name} email={email} picks={picks} phase={phase} compact />
+        </div>
+      </main>
+
+      {/* Email Modal for Existing Users */}
+      {showEmailModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2 className={styles.modalTitle}>📧 Add Your Email</h2>
+            <p className={styles.modalText}>
+              We now require an email address to sync your predictions. This helps ensure unique identification and better data management.
+            </p>
+            <div className={styles.modalForm}>
+              <input
+                className={styles.input}
+                type="email"
+                placeholder="Enter your email"
+                value={emailModalInput}
+                maxLength={60}
+                onChange={(e) => setEmailModalInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailModalSubmit()}
+                autoFocus
+              />
+              <button
+                className={styles.btn}
+                onClick={handleEmailModalSubmit}
+              >
+                Continue
+              </button>
+              {emailModalError && (
+                <p className={styles.modalError}>{emailModalError}</p>
+              )}
+            </div>
           </div>
         </div>
-      </header>
-
-      <BracketTree
-        picks={picks}
-        onPick={handlePick}
-        champ={champ}
-        onCrown={() => {
-          setPhase("result");
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
-      />
-
-      <div className={styles.predictFoot}>
-        {champ ? (
-          <button
-            className={styles.btn}
-            onClick={() => {
-              setPhase("result");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          >
-            👑 Crown champion & share
-          </button>
-        ) : (
-          <span className={styles.hint}>
-            Pick a winner in every match — the bracket fills in as you go.
-          </span>
-        )}
-        <SyncButton name={name} picks={picks} phase={phase} compact />
-      </div>
-    </main>
+      )}
+    </>
   );
 }
