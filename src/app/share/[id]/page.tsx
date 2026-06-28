@@ -9,9 +9,11 @@ type Props = {
 export default async function SharePage({ params }: Props) {
   const { id } = await params;
   
+  console.log('[SharePage] Looking for prediction with client_id:', id);
+  
   if (!isSupabaseConfigured()) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
+      <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>
         <h1>Database not configured</h1>
         <p>Please configure Supabase to use this feature.</p>
       </div>
@@ -26,12 +28,33 @@ export default async function SharePage({ params }: Props) {
       .eq("client_id", id)
       .single();
 
-    if (error || !data) {
+    console.log('[SharePage] Query result:', { data: !!data, error: error?.message });
+
+    if (error) {
+      console.error('[SharePage] Database error:', error);
+      
+      return (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>
+          <h1>Prediction Not Found</h1>
+          <p>This prediction doesn&apos;t exist or hasn&apos;t been synced yet.</p>
+          <p style={{ fontSize: '14px', color: '#888', marginTop: '20px' }}>
+            Error: {error.message}
+          </p>
+          <a href="/" style={{ color: '#ff2151', marginTop: '20px', display: 'inline-block' }}>
+            ← Go Home
+          </a>
+        </div>
+      );
+    }
+    
+    if (!data) {
+      console.error('[SharePage] No data found for client_id:', id);
       notFound();
     }
 
     return <ShareView prediction={data} />;
-  } catch {
+  } catch (err) {
+    console.error('[SharePage] Unexpected error:', err);
     notFound();
   }
 }

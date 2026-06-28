@@ -284,9 +284,35 @@ export default function Predictor() {
     // Get the client ID (unique identifier for this prediction)
     const clientId = getOrCreateClientId();
     
-    // Navigate to share URL
-    const shareUrl = `/share/${clientId}`;
-    router.push(shareUrl);
+    console.log('Sharing with clientId:', clientId);
+    
+    // First, sync to cloud to ensure data is available
+    if (name.trim() && email.trim() && champ) {
+      console.log('Syncing before share...');
+      setDownloading(true); // Reuse downloading state to show loading
+      
+      void syncPrediction({ name, email, picks, phase: 'result' })
+        .then((result) => {
+          if (result.ok) {
+            console.log('✅ Synced, redirecting to share page');
+            // Navigate to share URL
+            const shareUrl = `/share/${clientId}`;
+            router.push(shareUrl);
+          } else {
+            console.error('Sync failed:', result.error);
+            alert(`Failed to sync: ${result.error}`);
+            setDownloading(false);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to sync before share:', err);
+          alert('Failed to sync prediction. Please try again.');
+          setDownloading(false);
+        });
+    } else {
+      console.error('Missing required data for share:', { name, email, champ });
+      alert('Please complete your bracket first');
+    }
   }
 
   async function handleRefreshFromCloud() {
@@ -723,8 +749,9 @@ export default function Predictor() {
             <button
               className={styles.btn}
               onClick={handleShare}
+              disabled={downloading}
             >
-              👑 Crown champion & share
+              {downloading ? "Syncing..." : "👑 Crown champion & share"}
             </button>
           ) : (
             <span className={styles.hint}>
