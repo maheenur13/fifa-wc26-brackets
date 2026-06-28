@@ -34,7 +34,9 @@ export default function Predictor() {
   const [nameModalError, setNameModalError] = useState("");
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [screenshotMode, setScreenshotMode] = useState<"card" | "bracket">("bracket");
   const shareRef = useRef<HTMLDivElement>(null);
+  const bracketRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
   // an external system — the canonical place for this is an effect).
@@ -354,30 +356,102 @@ export default function Predictor() {
   }
 
   async function download() {
-    if (!shareRef.current) return;
+    // Choose which view to capture based on mode
+    const targetRef = screenshotMode === "bracket" ? bracketRef.current : shareRef.current;
+    
+    // If bracket mode but bracket not available, we need to switch phases temporarily
+    if (screenshotMode === "bracket" && !bracketRef.current) {
+      console.log("Bracket not available in result phase, switching to predict phase...");
+      
+      // Switch to predict phase temporarily
+      const originalPhase = phase;
+      setPhase("predict");
+      
+      // Wait for next render cycle
+      setTimeout(async () => {
+        // Now bracket should be rendered
+        if (!bracketRef.current) {
+          console.error("Bracket still not available after phase switch");
+          setPhase(originalPhase); // Switch back
+          alert("Could not capture bracket. Please try again.");
+          return;
+        }
+        
+        setShareError(false);
+        setDownloading(true);
+        
+        try {
+          if (document.fonts?.ready) {
+            await document.fonts.ready;
+          }
+          
+          const node = bracketRef.current;
+          const render = toPng(node, {
+            pixelRatio: 2,
+            backgroundColor: "#060418",
+            width: node.scrollWidth,
+            height: node.scrollHeight,
+          });
+          
+          const dataUrl = await Promise.race([
+            render,
+            new Promise<string>((_, reject) =>
+              setTimeout(() => reject(new Error("render-timeout")), 15000)
+            ),
+          ]);
+          
+          const link = document.createElement("a");
+          const safe = (name.trim() || "anonymous").replace(/[^a-z0-9]+/gi, "-");
+          link.download = `wc26-${safe}-bracket-${champ ?? "prediction"}.png`;
+          link.href = dataUrl;
+          link.click();
+          
+          console.log("✅ Bracket screenshot saved!");
+        } catch (err) {
+          console.error("Screenshot failed", err);
+          setShareError(true);
+        } finally {
+          setDownloading(false);
+          // Switch back to result phase
+          setPhase(originalPhase);
+        }
+      }, 100);
+      
+      return;
+    }
+    
+    if (!targetRef) {
+      console.error("Target ref not available:", screenshotMode);
+      return;
+    }
+    
     setShareError(false);
     setDownloading(true);
     try {
-      // Make sure web fonts are ready so they rasterize correctly.
       if (document.fonts?.ready) {
         await document.fonts.ready;
       }
-      const node = shareRef.current;
+      const node = targetRef;
+      
+      // For bracket view, capture the entire scrollable viewport
+      const isBracket = screenshotMode === "bracket";
       const render = toPng(node, {
         pixelRatio: 2,
         backgroundColor: "#060418",
-        width: node.offsetWidth,
-        height: node.offsetHeight,
+        width: isBracket ? node.scrollWidth : node.offsetWidth,
+        height: isBracket ? node.scrollHeight : node.offsetHeight,
       });
+      
       const dataUrl = await Promise.race([
         render,
         new Promise<string>((_, reject) =>
-          setTimeout(() => reject(new Error("render-timeout")), 12000)
+          setTimeout(() => reject(new Error("render-timeout")), 15000)
         ),
       ]);
       const link = document.createElement("a");
       const safe = (name.trim() || "anonymous").replace(/[^a-z0-9]+/gi, "-");
-      link.download = `wc26-${safe}-${champ ?? "bracket"}.png`;
+      const fileType = isBracket ? "bracket" : "card";
+      link.download = `wc26-${safe}-${fileType}-${champ ?? "prediction"}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -513,8 +587,25 @@ export default function Predictor() {
           <ShareCard ref={shareRef} name={name} picks={picks} champ={champ} />
           <SyncButton name={name} email={email} picks={picks} phase={phase} />
           <div className={styles.resultActions}>
-            <button className={styles.btn} onClick={download} disabled={downloading}>
-              {downloading ? "Rendering…" : "📸 Save image"}
+            <button 
+              className={styles.btn} 
+              onClick={() => {
+                setScreenshotMode("card");
+                download();
+              }} 
+              disabled={downloading}
+            >
+              {downloading && screenshotMode === "card" ? "Rendering…" : "📸 Save Card"}
+            </button>
+            <button 
+              className={styles.btn} 
+              onClick={() => {
+                setScreenshotMode("bracket");
+                download();
+              }} 
+              disabled={downloading}
+            >
+              {downloading && screenshotMode === "bracket" ? "Rendering…" : "🗂️ Save Bracket"}
             </button>
             <button
               className={styles.btnGhost}
@@ -583,15 +674,17 @@ export default function Predictor() {
           </div>
         </header>
 
-        <BracketTree
-          picks={picks}
-          onPick={handlePick}
-          champ={champ}
-          onCrown={() => {
-            setPhase("result");
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        />
+        <div ref={bracketRef}>
+          <BracketTree
+            picks={picks}
+            onPick={handlePick}
+            champ={champ}
+            onCrown={() => {
+              setPhase("result");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
+        </div>
 
         <div className={styles.predictFoot}>
           {champ ? (
