@@ -91,7 +91,50 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const email = searchParams.get("email");
+
+  // If email param is provided, return that specific prediction (for cross-device sync)
+  if (email) {
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        { ok: false, error: "Database is not configured." },
+        { status: 503 },
+      );
+    }
+
+    try {
+      const supabase = getSupabaseAdmin();
+      const { data, error } = await supabase
+        .from("predictions")
+        .select("*")
+        .eq("email", email.toLowerCase().trim())
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          // No rows found
+          return NextResponse.json({ ok: true, prediction: null });
+        }
+        console.error("Supabase fetch by email failed", error);
+        return NextResponse.json(
+          { ok: false, error: "Could not fetch prediction." },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({ ok: true, prediction: data });
+    } catch (err) {
+      console.error("Prediction fetch error", err);
+      return NextResponse.json(
+        { ok: false, error: "Server error." },
+        { status: 500 },
+      );
+    }
+  }
+
+  // Otherwise, admin is fetching all predictions
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." },

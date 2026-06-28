@@ -8,6 +8,7 @@ import {
   STORAGE_KEY,
   type Phase,
 } from "@/lib/storage";
+import type { PredictionRow } from "@/lib/predictions";
 import BracketTree from "./BracketTree";
 import ShareCard from "./ShareCard";
 import SyncButton from "./SyncButton";
@@ -28,6 +29,7 @@ export default function Predictor() {
   const [nameModalInput, setNameModalInput] = useState("");
   const [emailModalError, setEmailModalError] = useState("");
   const [nameModalError, setNameModalError] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
@@ -123,19 +125,45 @@ export default function Predictor() {
     setPicks((prev) => prunePicks({ ...prev, [matchId]: teamId }));
   }
 
-  function start() {
+  async function start() {
     console.log('Start clicked, email:', email, 'name:', name);
     if (!email.trim()) return;
-    // If no name yet, show name modal first
+    
+    setCheckingEmail(true);
+    
+    // Check if email already exists in database (cross-device sync)
     if (!name.trim()) {
-      // Pre-fill name input with email username for convenience
+      try {
+        const res = await fetch(`/api/predictions?email=${encodeURIComponent(email.trim())}`);
+        if (res.ok) {
+          const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
+          if (data.ok && data.prediction) {
+            // Found existing prediction! Load it
+            console.log('✅ Found existing prediction for email:', data.prediction);
+            setName(data.prediction.name);
+            setPicks(data.prediction.picks);
+            setPhase(data.prediction.phase === 'result' ? 'result' : 'predict');
+            setCheckingEmail(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+          }
+        }
+      } catch (err) {
+        console.log('Error checking email:', err);
+        // Continue to name modal if fetch fails
+      }
+      
+      // No existing prediction found, ask for name
       const emailUser = email.split('@')[0];
-      console.log('Showing name modal, prefilling with:', emailUser);
+      console.log('📝 No existing data, showing name modal, prefilling with:', emailUser);
       setNameModalInput(emailUser);
+      setCheckingEmail(false);
       setShowNameModal(true);
       return;
     }
+    
     console.log('Going to predict phase');
+    setCheckingEmail(false);
     setPhase("predict");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -260,10 +288,10 @@ export default function Predictor() {
               />
               <button
                 className={styles.btn}
-                onClick={start}
-                disabled={!email.trim()}
+                onClick={() => void start()}
+                disabled={!email.trim() || checkingEmail}
               >
-                Start →
+                {checkingEmail ? "Checking..." : "Start →"}
               </button>
             </div>
             <div className={styles.statStrip}>
