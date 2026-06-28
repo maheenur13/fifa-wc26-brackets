@@ -1380,6 +1380,94 @@
   }
 }
 
+/* Bracket Share View Styles */
+.bracketShareWrapper {
+  background: linear-gradient(165deg, #0a1230 0%, #0d1838 55%, #0c1f33 100%);
+  padding: 30px 20px;
+  min-height: 100vh;
+}
+
+.bracketShareHeader {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.bracketShareBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.bracketShareKicker {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+}
+
+.bracketShareTitle {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+  background: var(--grad-hot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(255, 33, 81, 0.35));
+}
+
+.bracketShareFooter {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bracketShareCredit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bracketShareBy {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.bracketShareName {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  background: var(--grad-hot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bracketShareBrandmark {
+  text-align: right;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--ink-faint);
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+}
+
+.bracketShareBrandmark span:first-child {
+  color: var(--neon-cyan);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 /* Edit Profile Page Styles */
 .editField {
   display: flex;

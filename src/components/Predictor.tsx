@@ -11,6 +11,7 @@ import {
 } from "@/lib/storage";
 import type { PredictionRow } from "@/lib/predictions";
 import BracketTree from "./BracketTree";
+import BracketShareView from "./BracketShareView";
 import ShareCard from "./ShareCard";
 import SyncButton from "./SyncButton";
 import styles from "./predictor.module.css";
@@ -36,6 +37,7 @@ export default function Predictor() {
   const [refreshing, setRefreshing] = useState(false);
   const [screenshotMode, setScreenshotMode] = useState<"card" | "bracket">("bracket");
   const shareRef = useRef<HTMLDivElement>(null);
+  const bracketShareRef = useRef<HTMLDivElement>(null);
 
   // Restore saved progress once on mount (syncing React with localStorage,
   // an external system — the canonical place for this is an effect).
@@ -358,56 +360,56 @@ export default function Predictor() {
     setShareError(false);
     setDownloading(true);
     
-    // For bracket mode, need to temporarily switch to predict phase
-    if (screenshotMode === "bracket" && phase === "result") {
-      const originalPhase = phase;
-      setPhase("predict");
+    // For bracket mode, use the BracketShareView component
+    if (screenshotMode === "bracket") {
+      if (!bracketShareRef.current) {
+        console.error("Bracket share view not available");
+        alert("Please wait for bracket to load");
+        setDownloading(false);
+        return;
+      }
       
-      setTimeout(async () => {
-        try {
-          if (document.fonts?.ready) {
-            await document.fonts.ready;
-          }
-          
-          // Find the viewport element (the actual bracket, without controls)
-          const viewport = document.querySelector(`.${styles.viewport}`) as HTMLElement;
-          if (!viewport) {
-            console.error("Could not find bracket viewport");
-            alert("Could not capture bracket. Please try again.");
-            setPhase(originalPhase);
-            setDownloading(false);
-            return;
-          }
-          
-          const render = toPng(viewport, {
-            pixelRatio: 2,
-            backgroundColor: "#060418",
-            width: viewport.scrollWidth,
-            height: viewport.scrollHeight,
-          });
-          
-          const dataUrl = await Promise.race([
-            render,
-            new Promise<string>((_, reject) =>
-              setTimeout(() => reject(new Error("render-timeout")), 15000)
-            ),
-          ]);
-          
-          const link = document.createElement("a");
-          const safe = (name.trim() || "anonymous").replace(/[^a-z0-9]+/gi, "-");
-          link.download = `wc26-${safe}-bracket-${champ ?? "prediction"}.png`;
-          link.href = dataUrl;
-          link.click();
-          
-          console.log("✅ Bracket screenshot saved!");
-        } catch (err) {
-          console.error("Screenshot failed", err);
-          setShareError(true);
-        } finally {
-          setDownloading(false);
-          setPhase(originalPhase);
+      try {
+        if (document.fonts?.ready) {
+          await document.fonts.ready;
         }
-      }, 100);
+        
+        const node = bracketShareRef.current;
+        
+        // Find the inner bracket element for actual dimensions
+        const inner = node.querySelector(`.${styles.inner}`) as HTMLElement;
+        const actualWidth = inner ? inner.offsetWidth + 40 : node.scrollWidth;
+        const actualHeight = node.scrollHeight;
+        
+        console.log('Capturing branded bracket:', { actualWidth, actualHeight });
+        
+        const render = toPng(node, {
+          pixelRatio: 3,
+          backgroundColor: "#0a1230",
+          width: actualWidth,
+          height: actualHeight,
+        });
+        
+        const dataUrl = await Promise.race([
+          render,
+          new Promise<string>((_, reject) =>
+            setTimeout(() => reject(new Error("render-timeout")), 20000)
+          ),
+        ]);
+        
+        const link = document.createElement("a");
+        const safe = (name.trim() || "anonymous").replace(/[^a-z0-9]+/gi, "-");
+        link.download = `wc26-${safe}-bracket-${champ ?? "prediction"}.png`;
+        link.href = dataUrl;
+        link.click();
+        
+        console.log("✅ Bracket screenshot saved!");
+      } catch (err) {
+        console.error("Screenshot failed", err);
+        setShareError(true);
+      } finally {
+        setDownloading(false);
+      }
       
       return;
     }
@@ -426,7 +428,7 @@ export default function Predictor() {
       
       const node = shareRef.current;
       const render = toPng(node, {
-        pixelRatio: 2,
+        pixelRatio: 3,
         backgroundColor: "#060418",
         width: node.offsetWidth,
         height: node.offsetHeight,
@@ -576,6 +578,19 @@ export default function Predictor() {
         <div className={`${styles.result} ${styles.pop}`}>
           <ShareCard ref={shareRef} name={name} picks={picks} champ={champ} />
           <SyncButton name={name} email={email} picks={picks} phase={phase} />
+          
+          {/* Hidden bracket share view for screenshots */}
+          <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '1600px' }}>
+            <BracketShareView
+              ref={bracketShareRef}
+              name={name}
+              picks={picks}
+              champ={champ}
+              onPick={handlePick}
+              onCrown={() => {}}
+            />
+          </div>
+          
           <div className={styles.resultActions}>
             <button 
               className={styles.btn} 
