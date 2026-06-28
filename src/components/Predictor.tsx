@@ -131,41 +131,42 @@ export default function Predictor() {
     
     setCheckingEmail(true);
     
-    // Check if email already exists in database (cross-device sync)
-    if (!name.trim()) {
-      try {
-        const res = await fetch(`/api/predictions?email=${encodeURIComponent(email.trim())}`);
-        if (res.ok) {
-          const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
-          if (data.ok && data.prediction) {
-            // Found existing prediction! Load it
-            console.log('✅ Found existing prediction for email:', data.prediction);
-            setName(data.prediction.name);
-            setPicks(data.prediction.picks);
-            setPhase(data.prediction.phase === 'result' ? 'result' : 'predict');
-            setCheckingEmail(false);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            return;
-          }
-        }
-      } catch (err) {
-        console.log('Error checking email:', err);
-        // Continue to name modal if fetch fails
-      }
-      
-      // No existing prediction found, ask for name
-      const emailUser = email.split('@')[0];
-      console.log('📝 No existing data, showing name modal, prefilling with:', emailUser);
-      setNameModalInput(emailUser);
+    // If both email and name are provided (editing case), go straight to predict
+    if (name.trim()) {
+      console.log('Both email and name provided, going to predict phase');
       setCheckingEmail(false);
-      setShowNameModal(true);
+      setPhase("predict");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     
-    console.log('Going to predict phase');
+    // Check if email already exists in database (cross-device sync)
+    try {
+      const res = await fetch(`/api/predictions?email=${encodeURIComponent(email.trim())}`);
+      if (res.ok) {
+        const data = await res.json() as { ok?: boolean; prediction?: PredictionRow | null };
+        if (data.ok && data.prediction) {
+          // Found existing prediction! Load it
+          console.log('✅ Found existing prediction for email:', data.prediction);
+          setName(data.prediction.name);
+          setPicks(data.prediction.picks);
+          setPhase(data.prediction.phase === 'result' ? 'result' : 'predict');
+          setCheckingEmail(false);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+      }
+    } catch (err) {
+      console.log('Error checking email:', err);
+      // Continue to name modal if fetch fails
+    }
+    
+    // No existing prediction found, ask for name via modal
+    const emailUser = email.split('@')[0];
+    console.log('📝 No existing data, showing name modal, prefilling with:', emailUser);
+    setNameModalInput(emailUser);
     setCheckingEmail(false);
-    setPhase("predict");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowNameModal(true);
   }
 
   function resetAll() {
@@ -283,15 +284,25 @@ export default function Predictor() {
                 value={email}
                 maxLength={60}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && email.trim() && start()}
+                onKeyDown={(e) => e.key === "Enter" && email.trim() && name.trim() && start()}
                 autoComplete="email"
+              />
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                maxLength={28}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && email.trim() && name.trim() && start()}
+                autoComplete="name"
               />
               <button
                 className={styles.btn}
                 onClick={() => void start()}
-                disabled={!email.trim() || checkingEmail}
+                disabled={!email.trim() || !name.trim() || checkingEmail}
               >
-                {checkingEmail ? "Checking..." : "Start →"}
+                {checkingEmail ? "Checking..." : (totalPicked > 0 ? "Update →" : "Start →")}
               </button>
             </div>
             <div className={styles.statStrip}>
