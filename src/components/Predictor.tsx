@@ -376,24 +376,32 @@ export default function Predictor() {
         
         const node = bracketShareRef.current;
         
-        // Find the inner bracket element for actual dimensions
-        const inner = node.querySelector(`.${styles.inner}`) as HTMLElement;
-        const actualWidth = inner ? inner.offsetWidth + 40 : node.scrollWidth;
-        const actualHeight = node.scrollHeight;
+        // Force layout calculation
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        console.log('Capturing branded bracket:', { actualWidth, actualHeight });
+        // Get the full dimensions including all content
+        const actualWidth = Math.max(node.scrollWidth, node.offsetWidth);
+        const actualHeight = Math.max(node.scrollHeight, node.offsetHeight);
+        
+        console.log('Capturing branded bracket:', { 
+          scrollWidth: node.scrollWidth,
+          offsetWidth: node.offsetWidth,
+          actualWidth, 
+          actualHeight 
+        });
         
         const render = toPng(node, {
           pixelRatio: 3,
           backgroundColor: "#0a1230",
           width: actualWidth,
           height: actualHeight,
+          cacheBust: true,
         });
         
         const dataUrl = await Promise.race([
           render,
           new Promise<string>((_, reject) =>
-            setTimeout(() => reject(new Error("render-timeout")), 20000)
+            setTimeout(() => reject(new Error("render-timeout")), 25000)
           ),
         ]);
         
@@ -580,7 +588,15 @@ export default function Predictor() {
           <SyncButton name={name} email={email} picks={picks} phase={phase} />
           
           {/* Hidden bracket share view for screenshots */}
-          <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '1600px' }}>
+          <div style={{ 
+            position: 'fixed', 
+            left: '-99999px', 
+            top: 0, 
+            width: 'auto',
+            minWidth: '2000px',
+            visibility: 'hidden',
+            pointerEvents: 'none'
+          }}>
             <BracketShareView
               ref={bracketShareRef}
               name={name}

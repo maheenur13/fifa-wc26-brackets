@@ -1385,6 +1385,8 @@
   background: linear-gradient(165deg, #0a1230 0%, #0d1838 55%, #0c1f33 100%);
   padding: 30px 20px;
   min-height: 100vh;
+  width: max-content;
+  min-width: 100%;
 }
 
 .bracketShareHeader {
