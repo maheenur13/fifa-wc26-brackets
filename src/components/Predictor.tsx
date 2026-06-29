@@ -9,6 +9,7 @@ import {
   isLocked,
   liveMatches,
   resolveTeams,
+  applyAutoWinners,
   MATCH_BY_ID,
   type Picks,
 } from "@/lib/bracket";
@@ -198,6 +199,15 @@ export default function Predictor() {
     const iv = setInterval(tick, 30000);
     return () => clearInterval(iv);
   }, []);
+
+  // Auto-advance the real winner of any finished match the user never picked,
+  // so locked rounds don't block prediction of later rounds. Runs after
+  // hydration so it isn't clobbered by the async localStorage/cloud load.
+  useEffect(() => {
+    if (!hydrated || !now) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPicks((prev) => applyAutoWinners(prev, now));
+  }, [now, hydrated]);
 
   const totalPicked = Object.values(picks).filter(Boolean).length;
   const progress = Math.round((totalPicked / 31) * 100);

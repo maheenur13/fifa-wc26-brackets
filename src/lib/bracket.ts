@@ -29,6 +29,11 @@ export type Match = {
   kickoff?: string;
   /** Minutes after kickoff before picks lock (default 0 = lock at kickoff). */
   lockGraceMin?: number;
+  /**
+   * Real-world winner (team id) once the match has actually been played.
+   * Used to auto-advance a team when a user never picked a now-locked match.
+   */
+  actualWinner?: string;
   meta?: { date: string; time: string; venue: string };
 };
 
@@ -38,7 +43,7 @@ export type Match = {
  */
 export const MATCHES: Match[] = [
   // ---- Round of 32 ---- (kickoff converted from local time + UTC offset)
-  { id: 73, round: "R32", team1: "rsa", team2: "can", kickoff: "2026-06-28T19:00:00Z", lockGraceMin: 65, meta: { date: "Jun 28", time: "12:00 PT", venue: "SoFi Stadium · Inglewood" } },
+  { id: 73, round: "R32", team1: "rsa", team2: "can", kickoff: "2026-06-28T19:00:00Z", lockGraceMin: 65, actualWinner: "can", meta: { date: "Jun 28", time: "12:00 PT", venue: "SoFi Stadium · Inglewood" } },
   { id: 74, round: "R32", team1: "ger", team2: "par", kickoff: "2026-06-29T20:30:00Z", meta: { date: "Jun 29", time: "16:30 ET", venue: "Gillette Stadium · Foxborough" } },
   { id: 75, round: "R32", team1: "ned", team2: "mar", kickoff: "2026-06-30T01:00:00Z", meta: { date: "Jun 29", time: "19:00 CT", venue: "Estadio BBVA · Guadalupe" } },
   { id: 76, round: "R32", team1: "bra", team2: "jpn", kickoff: "2026-06-29T17:00:00Z", meta: { date: "Jun 29", time: "12:00 CT", venue: "NRG Stadium · Houston" } },
@@ -170,4 +175,26 @@ export function liveMatches(now: number): Match[] {
   return MATCHES.filter((m) => isLive(m, now)).sort(
     (a, b) => (kickoffMs(a) ?? 0) - (kickoffMs(b) ?? 0),
   );
+}
+
+/**
+ * Fill in the real winner for any match that is locked, has a known result,
+ * and was never picked by the user — so the bracket can proceed to the next
+ * round. Never overwrites an existing user pick. Processed in round order so
+ * an auto-advanced team can feed the next round's slot in the same pass.
+ * Returns the same object reference when nothing changes.
+ */
+export function applyAutoWinners(picks: Picks, now: number): Picks {
+  let changed = false;
+  const next: Picks = { ...picks };
+  for (const m of MATCHES) {
+    if (next[m.id]) continue; // user already decided this match
+    if (!m.actualWinner) continue; // result not known yet
+    if (!isLocked(m, now)) continue; // still open for prediction
+    const { team1, team2 } = resolveTeams(m, next);
+    if (m.actualWinner !== team1 && m.actualWinner !== team2) continue;
+    next[m.id] = m.actualWinner;
+    changed = true;
+  }
+  return changed ? next : picks;
 }
